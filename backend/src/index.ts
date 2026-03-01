@@ -1,33 +1,39 @@
-import {WebSocketServer, WebSocket} from 'ws';
+import { WebSocketServer, WebSocket } from "ws";
 
-const wss = new WebSocketServer({port: 8080});
+const wss = new WebSocketServer({ port: 8080 });
 
-let userCount = 0;
-let allSockets: WebSocket[]= [];
+interface User {
+  socket: WebSocket;
+  room: string;
+}
 
-wss.on('connection', (socket:WebSocket) => {
-  console.log('Client connected');
-  userCount++;    // how many users are connected
-  console.log(`Current user count: ${userCount}`);
-  allSockets.push(socket); // add the new socket to the list of all sockets
+let allSockets: User[] = [];
 
-  socket.on('message', (message:any) => {
-    console.log(`Received message: ${message}`);
+wss.on("connection", (socket: WebSocket) => {
+  socket.on("message", (message) => {
+    // meassage is of type string
+    // @ts-ignore
+    const parsedMessage = JSON.parse(message); // Parse the incoming message to determine its type and payload
 
-    // Broadcast the message to all connected clients
-    allSockets.forEach((s) => {
-      if (s !== socket) { // Don't send the message back to the sender  
-        s.send(`Broadcast: ${message}`); 
-      }
+    if (parsedMessage.type === "join") {
+      const user: User = { socket, room: parsedMessage.payload.roomId };
+      allSockets.push(user);
+      console.log(
+        `User joined room: ${parsedMessage.payload.roomId}. Current user count: ${allSockets.length}`,
+      );
+    }
+
+    if (parsedMessage.type === "chat") {
+      allSockets.forEach((user) => {
+        if (user.room === parsedMessage.payload.roomId) {
+          user.socket.send(message); // Send the message to all users in the same room
+        }
+      });
+    }
+
+    socket.on("disconnect", () => {
+      allSockets = allSockets.filter((user) => user.socket !== socket); // Remove the socket from the list
+      console.log(`User disconnected. Current user count: ${allSockets.length}`);
     });
-
-    socket.on('disconnect', () => {
-      allSockets = allSockets.filter(s => s !== socket); // Remove the socket from the list
-      userCount--;
-      console.log(`User disconnected. Current user count: ${userCount}`);
-    })
-
   });
-
-})
- 
+});
