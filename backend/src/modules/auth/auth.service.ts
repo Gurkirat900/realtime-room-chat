@@ -7,6 +7,15 @@ export async function signup(data: {
   email: string;
   password: string;
 }) {
+   
+  const existingUser = await prisma.user.findFirst({
+    where: { email: data.email },
+  });
+
+  if (existingUser) {
+    throw new Error("User with this email already exists");
+  }
+
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
   const user = await prisma.user.create({
@@ -15,6 +24,12 @@ export async function signup(data: {
       email: data.email,
       password: hashedPassword,
     },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      createdAt: true,
+    },
   });
 
   const token = signToken({ userId: user.id });
@@ -22,10 +37,7 @@ export async function signup(data: {
   return { user, token };
 }
 
-export async function login(data: {
-  email: string;
-  password: string;
-}) {
+export async function login(data: { email: string; password: string }) {
   const user = await prisma.user.findUnique({
     where: { email: data.email },
   });
@@ -41,6 +53,7 @@ export async function login(data: {
   }
 
   const token = signToken({ userId: user.id });
+  const { password, ...userWithoutPassword } = user; // Exclude password from the user object
 
-  return { user, token };
+  return { user: userWithoutPassword, token };
 }
