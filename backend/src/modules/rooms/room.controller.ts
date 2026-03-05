@@ -6,6 +6,8 @@ import {
   leaveRoom,
   getAllRooms,
 } from "./room.service.js";
+import { roomManager } from "../../realtime/room.manager.js";
+import { socketRegistry } from "../../realtime/socket.registry.js";
 
 export async function handleCreateRoom(req: AuthRequest, res: Response) {
   try {
@@ -35,6 +37,13 @@ export async function handleJoinRoom(req: AuthRequest, res: Response) {
 
     const membership = await joinRoom(userId, roomId);
 
+    // subscribe active sockets
+    const sockets = socketRegistry.getUsersSockets(userId);
+
+    for (const socket of sockets) {
+      roomManager.subscribe(socket,[roomId]);
+    }
+
     res.status(200).json({
       message: "Joined room successfully",
       membership,
@@ -59,6 +68,12 @@ export async function handleLeaveRoom(req: AuthRequest, res: Response) {
 
     await leaveRoom(userId, roomId);
 
+    // unsubscribe from active rooms
+    const sockets = socketRegistry.getUsersSockets(userId);
+    for (const socket of sockets) {
+      roomManager.unsubscribe(socket,roomId);
+    }
+
     res.status(200).json({
       message: "Left room successfully",
     });
@@ -70,9 +85,7 @@ export async function handleLeaveRoom(req: AuthRequest, res: Response) {
 export async function handleGetRooms(req: AuthRequest, res: Response) {
   try {
     const rooms = await getAllRooms();
-    res.json({rooms,
-        message: "Rooms retrieved successfully"}
-    );
+    res.json({ rooms, message: "Rooms retrieved successfully" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -9,16 +9,6 @@ export interface RawClientEvent {  // Base interface for all client events, with
   [key: string]: any
 }
 
-export interface SubscribeRoomsEvent {  // Client event for subscribing to multiple rooms
-  type: "SUBSCRIBE_ROOMS"
-  roomIds: string[]
-}
-
-export interface UnsubscribeRoomEvent {  // Client event for unsubscribing from a single room
-  type: "UNSUBSCRIBE_ROOM"
-  roomId: string
-}
-
 export interface SendMessageEvent {  // Client event for sending a chat message to a room
   type: "SEND_MESSAGE"
   roomId: string
@@ -45,8 +35,6 @@ export interface IceCandidateEvent {  // Client event for sending a WebRTC ICE c
 
 // Union type for all possible client events, allowing for type-safe handling of incoming messages based on their type field
 export type ClientEvent =  
-  | SubscribeRoomsEvent
-  | UnsubscribeRoomEvent
   | SendMessageEvent
   | VoiceOfferEvent
   | VoiceAnswerEvent

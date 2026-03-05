@@ -1,14 +1,14 @@
 import { IncomingMessage } from "http"
 import { WebSocket } from "ws"
-
 import { verifyToken } from "../lib/jwt.js"
 import type { AuthedSocket } from "./types.js"
 import { socketRegistry } from "./socket.registry.js"
 import { roomManager } from "./room.manager.js"
 import { attachMessageRouter } from "./message.router.js"
 import type { JwtPayload } from "../middlewares/auth.middleware.js"
+import { getUserActiveRooms } from "../modules/rooms/room.service.js"
 
-export function handleSocketConnection(ws: WebSocket, req: IncomingMessage) {
+export async function handleSocketConnection(ws: WebSocket, req: IncomingMessage) {
   try {
     const url = new URL(req.url || "", `http://${req.headers.host}`)
     const token = url.searchParams.get("token")
@@ -24,6 +24,12 @@ export function handleSocketConnection(ws: WebSocket, req: IncomingMessage) {
     socket.userId = decoded.userId
 
     socketRegistry.register(socket)
+
+    // Auto subscribe rooms
+    const userRooms= await getUserActiveRooms(socket.userId)
+    if(userRooms.length>0){
+        roomManager.subscribe(socket,userRooms)
+    }
 
     attachMessageRouter(socket)
 

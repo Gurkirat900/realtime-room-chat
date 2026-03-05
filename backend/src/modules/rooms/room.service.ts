@@ -62,6 +62,7 @@ export async function leaveRoom(userId: string, roomId: string) {
     throw new Error("You are not an active member of this room");
   }
 
+
   return prisma.roomMembership.update({
     where: {
       userId_roomId: { userId, roomId }
@@ -89,4 +90,37 @@ export async function getAllRooms() {
       }
     }
   });
+}
+
+
+export async function getActiveMembershipRooms(  
+  userId: string,
+  roomIds: string[]
+) {
+  const memberships = await prisma.roomMembership.findMany({
+    where: {
+      userId,
+      roomId: { in: roomIds },
+      isActive: true
+    },
+    select: {
+      roomId: true
+    }
+  });
+
+  return memberships.map(m => m.roomId);
+}
+
+export async function getUserActiveRooms(userId: string) {
+  const memberships = await prisma.roomMembership.findMany({
+    where: {
+      userId,
+      isActive: true
+    },
+    select: {
+      roomId: true
+    }
+  });
+
+  return memberships.map(m => m.roomId);
 }
