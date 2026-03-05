@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../lib/jwt.js";
 
-interface JwtPayload { // Define the expected structure of the JWT payload
+export interface JwtPayload { // Define the expected structure of the JWT payload
   userId: string;   
 }
 
