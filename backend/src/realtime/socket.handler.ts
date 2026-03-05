@@ -5,7 +5,7 @@ import { verifyToken } from "../lib/jwt.js"
 import type { AuthedSocket } from "./types.js"
 import { socketRegistry } from "./socket.registry.js"
 import { roomManager } from "./room.manager.js"
-// import { attachMessageRouter } from "./message.router.js"
+import { attachMessageRouter } from "./message.router.js"
 import type { JwtPayload } from "../middlewares/auth.middleware.js"
 
 export function handleSocketConnection(ws: WebSocket, req: IncomingMessage) {
@@ -25,11 +25,12 @@ export function handleSocketConnection(ws: WebSocket, req: IncomingMessage) {
 
     socketRegistry.register(socket)
 
-    // attachMessageRouter(socket)
+    attachMessageRouter(socket)
 
     ws.on("close", () => {
       socketRegistry.remove(socket)
       roomManager.removeSocket(socket)
+      console.log(`Socket disconnected: ${socket.userId}`)
     })
   } catch (error) {
     console.error("WebSocket authentication failed:", error)

@@ -23,6 +23,7 @@ export const createMessage = async (
       content,
       userId,
       roomId,
+      createdAt: new Date(),
     },
     include: {
       user: {

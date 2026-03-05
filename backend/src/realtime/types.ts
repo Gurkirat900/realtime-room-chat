@@ -64,7 +64,11 @@ export interface NewMessageEvent {
     id: string
     content: string
     userId: string
-    createdAt: string
+    createdAt: Date
+    user:{
+      id: string,
+      username: string
+    }
   }
 }
 

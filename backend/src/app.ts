@@ -5,12 +5,12 @@ import authRoutes from "./modules/auth/auth.route.js";
 import roomRoutes from "./modules/rooms/room.routes.js";
 
 const app = express();
-
-/* Global Middlewares */
+ 
+// Middlewares
 app.use(express.json());
 app.use(cookieParser());
 
-/* Routes */
+// Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/rooms", roomRoutes);
 
