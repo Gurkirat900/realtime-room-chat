@@ -7,6 +7,8 @@ import { roomManager } from "./room.manager.js"
 import { attachMessageRouter } from "./message.router.js"
 import type { JwtPayload } from "../middlewares/auth.middleware.js"
 import { getUserActiveRooms } from "../modules/rooms/room.service.js"
+import { attachVoiceRouter } from "./voice/voice.router.js"
+import { voiceManager } from "./voice/voice.manager.js"
 
 export async function handleSocketConnection(ws: WebSocket, req: IncomingMessage) {
   try {
@@ -32,9 +34,11 @@ export async function handleSocketConnection(ws: WebSocket, req: IncomingMessage
     }
 
     attachMessageRouter(socket)
+    attachVoiceRouter(socket)
 
     ws.on("close", () => {
       socketRegistry.remove(socket)
+      voiceManager.removeSocket(socket)
       roomManager.removeSocket(socket)
       console.log(`Socket disconnected: ${socket.userId}`)
     })

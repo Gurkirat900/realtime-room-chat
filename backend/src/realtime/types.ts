@@ -15,30 +15,54 @@ export interface SendMessageEvent {  // Client event for sending a chat message 
   content: string
 }
 
-export interface VoiceOfferEvent {  // Client event for sending a WebRTC offer to a room for voice chat
-  type: "VOICE_OFFER"
-  roomId: string
-  offer: unknown
+export interface VoiceJoinEvent {
+  type: "VOICE_JOIN"
+  payload: {
+    voiceChannelId: string
+  }
 }
 
-export interface VoiceAnswerEvent {  // Client event for sending a WebRTC answer to a room for voice chat
-  type: "VOICE_ANSWER"
-  roomId: string
-  answer: unknown
+export interface VoiceLeaveEvent {
+  type: "VOICE_LEAVE"
 }
 
-export interface IceCandidateEvent {  // Client event for sending a WebRTC ICE candidate to a room for voice chat
-  type: "ICE_CANDIDATE"
-  roomId: string
-  candidate: unknown
+export interface CreateTransportEvent {
+  type: "VOICE_CREATE_TRANSPORT"
+}
+
+export interface ConnectTransportEvent {
+  type: "VOICE_CONNECT_TRANSPORT"
+  payload: {
+    transportId: string
+    dtlsParameters: unknown
+  }
+}
+
+export interface ProduceEvent {
+  type: "VOICE_PRODUCE"
+  payload: {
+    transportId: string
+    kind: "audio" | "video"
+    rtpParameters: unknown
+  }
+}
+
+export interface ConsumeEvent {
+  type: "VOICE_CONSUME"
+  payload: {
+    producerId: string
+  }
 }
 
 // Union type for all possible client events, allowing for type-safe handling of incoming messages based on their type field
 export type ClientEvent =  
   | SendMessageEvent
-  | VoiceOfferEvent
-  | VoiceAnswerEvent
-  | IceCandidateEvent
+  | VoiceJoinEvent
+  | VoiceLeaveEvent
+  | CreateTransportEvent
+  | ConnectTransportEvent
+  | ProduceEvent
+  | ConsumeEvent
 
 export interface RoomSubscribedEvent {
   type: "ROOM_SUBSCRIBED"
@@ -65,14 +89,44 @@ export interface ErrorEvent { // Server event for sending error messages back to
   message: string
 }
 
+// remove after mediasoup
 export interface VoiceSignalEvent {  // Server event for relaying WebRTC signals (offer, answer, ICE candidates) to clients in a room
   type: "VOICE_SIGNAL"  
   roomId: string
   payload: unknown
 }
 
+export interface VoiceParticipantsEvent {
+  type: "VOICE_PARTICIPANTS"
+  payload: {
+    voiceChannelId: string
+    users: {
+      userId: string
+    }[]
+  }
+}
+
+export interface VoiceUserJoinedEvent {
+  type: "VOICE_USER_JOINED"
+  payload: {
+    voiceChannelId: string
+    userId: string
+  }
+}
+
+export interface VoiceUserLeftEvent {
+  type: "VOICE_USER_LEFT"
+  payload: {
+    voiceChannelId: string
+    userId: string
+  }
+}
+
 export type ServerEvent =
   | RoomSubscribedEvent
   | NewMessageEvent
   | ErrorEvent
-  | VoiceSignalEvent
+  | VoiceParticipantsEvent
+  | VoiceUserJoinedEvent
+  | VoiceUserLeftEvent
+  | VoiceSignalEvent   // remove after mediasoup
