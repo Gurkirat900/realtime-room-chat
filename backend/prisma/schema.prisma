@@ -24,6 +24,7 @@ model Room {
 
   memberships RoomMembership[]
   messages    Message[]
+  voiceChannels VoiceChannel[]
 }
 
 model RoomMembership {
@@ -51,4 +52,15 @@ model Message {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId, createdAt])  // Index to optimize fetching messages for a room in chronological order
+}
+
+model VoiceChannel {
+  id        String   @id @default(uuid())
+  name      String
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([roomId, name])   // no same name for voice channel within a room
 }
