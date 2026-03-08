@@ -1,5 +1,12 @@
-import type { AuthedSocket, ClientEvent, RawClientEvent } from "../types.js";
+import type {
+  AuthedSocket,
+  ClientEvent,
+  ConnectTransportEvent,
+  ProduceEvent,
+  RawClientEvent,
+} from "../types.js";
 import { voiceManager } from "./voice.manager.js";
+import { mediaSoupManager } from "./mediasoup.manager.js";
 
 export function attachVoiceRouter(socket: AuthedSocket) {
   socket.on("message", (data) => {
@@ -24,6 +31,18 @@ export function attachVoiceRouter(socket: AuthedSocket) {
         case "VOICE_LEAVE":
           handleLeave(socket);
           break;
+
+        case "VOICE_CREATE_TRANSPORT":
+          handleCreateTransport(socket);
+          break;
+
+        case "VOICE_CONNECT_TRANSPORT":
+          handleConnectTransport(socket, event as ConnectTransportEvent);
+          break;
+
+        case "VOICE_PRODUCE":
+          handleProduce(socket, event as ProduceEvent);
+          break;
       }
     } catch (error) {
       socket.send(
@@ -35,8 +54,6 @@ export function attachVoiceRouter(socket: AuthedSocket) {
     }
   });
 }
-
-
 
 function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
   const userId = socket.userId;
@@ -51,7 +68,7 @@ function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
 
   socket.send(
     JSON.stringify({
-      type: "VOICE_PARTICIPANTS",
+      type: "VOICE_PARTICIPANTS",  // show list of all participants in channel when new joins
       payload: {
         voiceChannelId,
         users: Array.from(participants).map((s) => ({
@@ -72,6 +89,70 @@ function handleLeave(socket: AuthedSocket) {
   voiceManager.leave(socket);
 
   broadcastUserLeft(channelId, socket.userId);
+}
+
+async function handleCreateTransport(socket: AuthedSocket) {
+  const channelId = voiceManager.getChannel(socket);
+  if (!channelId) return;
+
+  const params = await mediaSoupManager.createWebRtcTransport(
+    socket,
+    channelId,
+    "send",
+  );
+
+  socket.send(
+    JSON.stringify({
+      type: "VOICE_TRANSPORT_CREATED",
+      payload: params,
+    }),
+  );
+}
+
+async function handleConnectTransport(
+  socket: AuthedSocket,
+  event: ConnectTransportEvent,
+) {
+  await mediaSoupManager.connectTransport(
+    socket,
+    event.payload.direction,
+    event.payload.dtlsParameters,
+  );
+}
+
+async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
+  const producerId = await mediaSoupManager.produce(
+    socket,
+    event.payload.kind,
+    event.payload.rtpParameters,
+  );
+
+  // Acknowledge producer creation to sender
+  socket.send(
+    JSON.stringify({
+      type: "VOICE_PRODUCED",
+      payload: { producerId },
+    }),
+  );
+
+  // Notify other users in the same voice channel
+  const channelId = voiceManager.getChannel(socket);
+  if (!channelId) return;
+
+  const participants = voiceManager.getParticipants(channelId);
+
+  for (const peer of participants) {
+    if (peer === socket) continue;
+
+    peer.send(
+      JSON.stringify({
+        type: "VOICE_NEW_PRODUCER",
+        payload: {
+          producerId,
+        },
+      }),
+    );
+  }
 }
 
 function broadcastUserJoined(

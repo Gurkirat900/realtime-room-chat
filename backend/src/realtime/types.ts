@@ -15,7 +15,7 @@ export interface SendMessageEvent {  // Client event for sending a chat message 
   content: string
 }
 
-export interface VoiceJoinEvent {
+export interface VoiceJoinEvent {  // client event for joing a voice channel
   type: "VOICE_JOIN"
   payload: {
     voiceChannelId: string
@@ -26,24 +26,23 @@ export interface VoiceLeaveEvent {
   type: "VOICE_LEAVE"
 }
 
-export interface CreateTransportEvent {
+export interface CreateTransportEvent {  // client event when transport is created(mediasoup)
   type: "VOICE_CREATE_TRANSPORT"
 }
 
-export interface ConnectTransportEvent {
+export interface ConnectTransportEvent {  // client event when transport is connected(mediasoup)
   type: "VOICE_CONNECT_TRANSPORT"
   payload: {
-    transportId: string
-    dtlsParameters: unknown
+    direction: "send" | "recv"
+    dtlsParameters: any
   }
 }
 
 export interface ProduceEvent {
   type: "VOICE_PRODUCE"
   payload: {
-    transportId: string
     kind: "audio" | "video"
-    rtpParameters: unknown
+    rtpParameters: any
   }
 }
 
@@ -89,12 +88,6 @@ export interface ErrorEvent { // Server event for sending error messages back to
   message: string
 }
 
-// remove after mediasoup
-export interface VoiceSignalEvent {  // Server event for relaying WebRTC signals (offer, answer, ICE candidates) to clients in a room
-  type: "VOICE_SIGNAL"  
-  roomId: string
-  payload: unknown
-}
 
 export interface VoiceParticipantsEvent {
   type: "VOICE_PARTICIPANTS"
@@ -122,6 +115,31 @@ export interface VoiceUserLeftEvent {
   }
 }
 
+export interface VoiceProducedEvent {  // server to client that produced
+  type: "VOICE_PRODUCED"
+  payload: {
+    producerId: string
+  }
+}
+
+export interface VoiceNewProducerEvent {  // server to other clients
+  type: "VOICE_NEW_PRODUCER"
+  payload: {
+    producerId: string
+  }
+}
+
+export interface VoiceConsumerCreatedEvent {
+  type: "VOICE_CONSUMER_CREATED"
+  payload: {
+    id: string
+    producerId: string
+    kind: string
+    rtpParameters: unknown
+  }
+}
+
+
 export type ServerEvent =
   | RoomSubscribedEvent
   | NewMessageEvent
@@ -129,4 +147,6 @@ export type ServerEvent =
   | VoiceParticipantsEvent
   | VoiceUserJoinedEvent
   | VoiceUserLeftEvent
-  | VoiceSignalEvent   // remove after mediasoup
+  | VoiceProducedEvent
+  | VoiceNewProducerEvent
+  | VoiceConsumerCreatedEvent
