@@ -148,6 +148,16 @@ class MediaSoupManager {
     return producer.id;
   }
 
+  getRouterRtpCapabilities(channelId: string) {  // for consumer to be called
+    const router = this.routers.get(channelId);
+
+    if (!router) {
+      throw new Error("Router not found");
+    }
+
+    return router.rtpCapabilities;
+  }
+
   async consume(
     socket: AuthedSocket,
     producerId: string,

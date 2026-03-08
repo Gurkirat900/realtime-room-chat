@@ -28,6 +28,9 @@ export interface VoiceLeaveEvent {
 
 export interface CreateTransportEvent {  // client event when transport is created(mediasoup)
   type: "VOICE_CREATE_TRANSPORT"
+  payload:{
+    direction: "send" | "recv"
+  }
 }
 
 export interface ConnectTransportEvent {  // client event when transport is connected(mediasoup)
@@ -46,6 +49,10 @@ export interface ProduceEvent {
   }
 }
 
+export interface GetRtpCapabilities{
+  type: "VOICE_GET_RTP_CAPABILITIES"
+}
+
 export interface ConsumeEvent {
   type: "VOICE_CONSUME"
   payload: {
@@ -62,6 +69,7 @@ export type ClientEvent =
   | CreateTransportEvent
   | ConnectTransportEvent
   | ProduceEvent
+  | GetRtpCapabilities
   | ConsumeEvent
 
 export interface RoomSubscribedEvent {

@@ -3,6 +3,7 @@ import type {
   ClientEvent,
   ConnectTransportEvent,
   ConsumeEvent,
+  CreateTransportEvent,
   ProduceEvent,
   RawClientEvent,
 } from "../types.js";
@@ -34,7 +35,7 @@ export function attachVoiceRouter(socket: AuthedSocket) {
           break;
 
         case "VOICE_CREATE_TRANSPORT":
-          handleCreateTransport(socket);
+          handleCreateTransport(socket,event as CreateTransportEvent);
           break;
 
         case "VOICE_CONNECT_TRANSPORT":
@@ -43,6 +44,10 @@ export function attachVoiceRouter(socket: AuthedSocket) {
 
         case "VOICE_PRODUCE":
           handleProduce(socket, event as ProduceEvent);
+          break;
+
+        case "VOICE_GET_RTP_CAPABILITIES":
+          handleGetRtpCapabilities(socket);
           break;
 
         case "VOICE_CONSUME":
@@ -87,7 +92,7 @@ function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
 
   socket.send(
     JSON.stringify({
-      type: "VOICE_EXISTING_PRODUCERS",   // send producer ids of exiting users in voice channel so client can  ake consumer for them
+      type: "VOICE_EXISTING_PRODUCERS", // send producer ids of exiting users in voice channel so client can  ake consumer for them
       payload: {
         producerIds,
       },
@@ -107,14 +112,14 @@ function handleLeave(socket: AuthedSocket) {
   broadcastUserLeft(channelId, socket.userId);
 }
 
-async function handleCreateTransport(socket: AuthedSocket) {
+async function handleCreateTransport(socket: AuthedSocket,event:CreateTransportEvent) {
   const channelId = voiceManager.getChannel(socket);
   if (!channelId) return;
 
   const params = await mediaSoupManager.createWebRtcTransport(
     socket,
     channelId,
-    "send",
+    event.payload.direction,
   );
 
   socket.send(
@@ -169,6 +174,20 @@ async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
       }),
     );
   }
+}
+
+function handleGetRtpCapabilities(socket: AuthedSocket) {
+
+  const channelId = voiceManager.getChannel(socket)
+  if (!channelId) return
+
+  const rtpCapabilities =
+    mediaSoupManager.getRouterRtpCapabilities(channelId)
+
+  socket.send(JSON.stringify({
+    type: "VOICE_ROUTER_RTP_CAPABILITIES",
+    payload: { rtpCapabilities }
+  }))
 }
 
 async function handleConsume(socket: AuthedSocket, event: ConsumeEvent) {
