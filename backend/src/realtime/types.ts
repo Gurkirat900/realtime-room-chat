@@ -49,7 +49,8 @@ export interface ProduceEvent {
 export interface ConsumeEvent {
   type: "VOICE_CONSUME"
   payload: {
-    producerId: string
+    producerId: string,
+    rtpCapabilities: any
   }
 }
 
@@ -139,6 +140,13 @@ export interface VoiceConsumerCreatedEvent {
   }
 }
 
+export interface VoiceExistingProducersEvent {
+  type: "VOICE_EXISTING_PRODUCERS"
+  payload: {
+    producerIds: string[]
+  }
+}
+
 
 export type ServerEvent =
   | RoomSubscribedEvent
@@ -150,3 +158,4 @@ export type ServerEvent =
   | VoiceProducedEvent
   | VoiceNewProducerEvent
   | VoiceConsumerCreatedEvent
+  | VoiceExistingProducersEvent

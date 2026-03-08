@@ -2,6 +2,7 @@ import type {
   AuthedSocket,
   ClientEvent,
   ConnectTransportEvent,
+  ConsumeEvent,
   ProduceEvent,
   RawClientEvent,
 } from "../types.js";
@@ -43,6 +44,10 @@ export function attachVoiceRouter(socket: AuthedSocket) {
         case "VOICE_PRODUCE":
           handleProduce(socket, event as ProduceEvent);
           break;
+
+        case "VOICE_CONSUME":
+          handleConsume(socket, event as ConsumeEvent);
+          break;
       }
     } catch (error) {
       socket.send(
@@ -68,12 +73,23 @@ function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
 
   socket.send(
     JSON.stringify({
-      type: "VOICE_PARTICIPANTS",  // show list of all participants in channel when new joins
+      type: "VOICE_PARTICIPANTS", // show list of all participants in channel when new joins
       payload: {
         voiceChannelId,
         users: Array.from(participants).map((s) => ({
           userId: s.userId,
         })),
+      },
+    }),
+  );
+
+  const producerIds = mediaSoupManager.getProducersInChannel(voiceChannelId);
+
+  socket.send(
+    JSON.stringify({
+      type: "VOICE_EXISTING_PRODUCERS",   // send producer ids of exiting users in voice channel so client can  ake consumer for them
+      payload: {
+        producerIds,
       },
     }),
   );
@@ -153,6 +169,21 @@ async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
       }),
     );
   }
+}
+
+async function handleConsume(socket: AuthedSocket, event: ConsumeEvent) {
+  const consumer = await mediaSoupManager.consume(
+    socket,
+    event.payload.producerId,
+    event.payload.rtpCapabilities,
+  );
+
+  socket.send(
+    JSON.stringify({
+      type: "VOICE_CONSUMER_CREATED",
+      payload: consumer,
+    }),
+  );
 }
 
 function broadcastUserJoined(

@@ -1,6 +1,7 @@
 import * as mediasoup from "mediasoup";
 import type { AuthedSocket } from "../types.js";
 import { env } from "../../config/env.js";
+import { voiceManager } from "./voice.manager.js";
 
 class MediaSoupManager {
   private worker: mediasoup.types.Worker | null = null;
@@ -16,6 +17,7 @@ class MediaSoupManager {
   >();
 
   private producers = new Map<AuthedSocket, mediasoup.types.Producer>();
+  private consumers = new Map<AuthedSocket, mediasoup.types.Consumer[]>();
 
   private readonly mediaCodecs: mediasoup.types.RtpCodecCapability[] = [
     {
@@ -144,6 +146,72 @@ class MediaSoupManager {
     });
 
     return producer.id;
+  }
+
+  async consume(
+    socket: AuthedSocket,
+    producerId: string,
+    rtpCapabilities: mediasoup.types.RtpCapabilities,
+  ) {
+    const socketTransports = this.transports.get(socket);
+
+    if (!socketTransports?.recvTransport) {
+      throw new Error("Recv transport not found");
+    }
+
+    const channelId = voiceManager.getChannel(socket);
+    if (!channelId) {
+      throw new Error("Socket not in voice channel");
+    }
+    const router = this.routers.get(channelId);
+    if (!router) {
+      throw new Error("Router not found for channel");
+    }
+
+    if (!router.canConsume({ producerId, rtpCapabilities })) {
+      throw new Error("Client cannot consume this producer");
+    }
+
+    const consumer = await socketTransports.recvTransport.consume({
+      producerId,
+      rtpCapabilities,
+      paused: false,
+    });
+
+    let socketConsumers = this.consumers.get(socket);
+
+    if (!socketConsumers) {
+      socketConsumers = [];
+      this.consumers.set(socket, socketConsumers);
+    }
+
+    socketConsumers.push(consumer);
+
+    consumer.on("transportclose", () => {
+      consumer.close();
+    });
+
+    return {
+      id: consumer.id,
+      producerId,
+      kind: consumer.kind,
+      rtpParameters: consumer.rtpParameters,
+    };
+  }
+
+  // send list of exiting users in voice channel to new clienr
+  getProducersInChannel(channelId: string): string[] {
+    const ids: string[] = [];
+
+    for (const [socket, producer] of this.producers) {
+      const userChannel = voiceManager.getChannel(socket);
+
+      if (userChannel === channelId) {
+        ids.push(producer.id);
+      }
+    }
+
+    return ids;
   }
 
   removeSocket(socket: AuthedSocket) {
