@@ -30,14 +30,6 @@ export function attachMessageRouter(socket: AuthedSocket) {
         case "SEND_MESSAGE":
           await handleSendMessage(socket, event as SendMessageEvent);
           break;
-
-        default:
-          socket.send(
-            JSON.stringify({
-              type: "ERROR",
-              message: "Unknown event type",
-            }),
-          );
       }
     } catch (error) {
       socket.send(

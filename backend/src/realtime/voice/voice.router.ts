@@ -24,7 +24,9 @@ export function attachVoiceRouter(socket: AuthedSocket) {
         return;
       }
 
+      console.log("WS EVENT:", parsedEvent);
       const event = parsedEvent as ClientEvent; // Cast the parsed event to the ClientEvent union type for type-safe handling
+      console.log(event);
       switch (event.type) {
         case "VOICE_JOIN":
           handleJoin(socket, event.payload.voiceChannelId);
@@ -35,7 +37,7 @@ export function attachVoiceRouter(socket: AuthedSocket) {
           break;
 
         case "VOICE_CREATE_TRANSPORT":
-          handleCreateTransport(socket,event as CreateTransportEvent);
+          handleCreateTransport(socket, event as CreateTransportEvent);
           break;
 
         case "VOICE_CONNECT_TRANSPORT":
@@ -65,7 +67,7 @@ export function attachVoiceRouter(socket: AuthedSocket) {
   });
 }
 
-function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
+async function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
   const userId = socket.userId;
 
   const previousChannel = voiceManager.join(voiceChannelId, socket);
@@ -74,6 +76,8 @@ function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
     broadcastUserLeft(previousChannel, userId);
   }
 
+  // create router if first user in channel
+  await mediaSoupManager.getOrCreateRouter(voiceChannelId)
   const participants = voiceManager.getParticipants(voiceChannelId);
 
   socket.send(
@@ -111,13 +115,16 @@ function handleLeave(socket: AuthedSocket) {
 
   broadcastUserLeft(channelId, socket.userId);
 
-  const remaining= voiceManager.getParticipants(channelId)
-  if(remaining.size==0){
-    mediaSoupManager.destroyRouter(channelId)
+  const remaining = voiceManager.getParticipants(channelId);
+  if (remaining.size == 0) {
+    mediaSoupManager.destroyRouter(channelId);
   }
 }
 
-async function handleCreateTransport(socket: AuthedSocket,event:CreateTransportEvent) {
+async function handleCreateTransport(
+  socket: AuthedSocket,
+  event: CreateTransportEvent,
+) {
   const channelId = voiceManager.getChannel(socket);
   if (!channelId) return;
 
@@ -182,17 +189,23 @@ async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
 }
 
 function handleGetRtpCapabilities(socket: AuthedSocket) {
+  try {
+    console.log("inside getRTp capabilities");
+    const channelId = voiceManager.getChannel(socket);
+    if (!channelId) return;
 
-  const channelId = voiceManager.getChannel(socket)
-  if (!channelId) return
+    const rtpCapabilities =
+      mediaSoupManager.getRouterRtpCapabilities(channelId);
 
-  const rtpCapabilities =
-    mediaSoupManager.getRouterRtpCapabilities(channelId)
-
-  socket.send(JSON.stringify({
-    type: "VOICE_ROUTER_RTP_CAPABILITIES",
-    payload: { rtpCapabilities }
-  }))
+    socket.send(
+      JSON.stringify({
+        type: "VOICE_ROUTER_RTP_CAPABILITIES",
+        payload: { rtpCapabilities },
+      }),
+    );
+  } catch (error: any) {
+    console.log("Err mess", error.message);
+  }
 }
 
 async function handleConsume(socket: AuthedSocket, event: ConsumeEvent) {

@@ -55,6 +55,7 @@ class MediaSoupManager {
     });
 
     this.routers.set(voiceChannelId, router);
+    console.log("Router created")  // remove later
 
     return router;
   }
@@ -148,12 +149,12 @@ class MediaSoupManager {
     return producer.id;
   }
 
-  getRouterRtpCapabilities(channelId: string) {
+  async getRouterRtpCapabilities(channelId: string) {
     // for consumer to be called
-    const router = this.routers.get(channelId);
+    let router = this.routers.get(channelId);
 
     if (!router) {
-      throw new Error("Router not found");
+      router= await this.getOrCreateRouter(channelId) // if not create one
     }
 
     return router.rtpCapabilities;
@@ -210,7 +211,7 @@ class MediaSoupManager {
     };
   }
 
-  // send list of exiting users in voice channel to new clienr
+  // send list of exiting users in voice channel to new client
   getProducersInChannel(channelId: string): string[] {
     const ids: string[] = [];
 
