@@ -148,7 +148,8 @@ class MediaSoupManager {
     return producer.id;
   }
 
-  getRouterRtpCapabilities(channelId: string) {  // for consumer to be called
+  getRouterRtpCapabilities(channelId: string) {
+    // for consumer to be called
     const router = this.routers.get(channelId);
 
     if (!router) {
@@ -238,6 +239,18 @@ class MediaSoupManager {
     socketTransports.recvTransport?.close();
 
     this.transports.delete(socket);
+  }
+
+  destroyRouter(channelId: string) {  // when all user leaves voice channel
+    const router = this.routers.get(channelId);
+
+    if (!router) return;
+
+    router.close();
+
+    this.routers.delete(channelId);
+
+    console.log(`Router destroyed for voice channel ${channelId}`);
   }
 }
 

@@ -110,6 +110,11 @@ function handleLeave(socket: AuthedSocket) {
   voiceManager.leave(socket);
 
   broadcastUserLeft(channelId, socket.userId);
+
+  const remaining= voiceManager.getParticipants(channelId)
+  if(remaining.size==0){
+    mediaSoupManager.destroyRouter(channelId)
+  }
 }
 
 async function handleCreateTransport(socket: AuthedSocket,event:CreateTransportEvent) {

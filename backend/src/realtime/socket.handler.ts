@@ -38,10 +38,21 @@ export async function handleSocketConnection(ws: WebSocket, req: IncomingMessage
     attachVoiceRouter(socket)
 
     ws.on("close", () => {
+      const channelId= voiceManager.getChannel(socket)
+
       socketRegistry.remove(socket)
       voiceManager.removeSocket(socket)
       roomManager.removeSocket(socket)
       mediaSoupManager.removeSocket(socket)
+
+      // destroy router if no participants on leaving
+      if(channelId){
+        const remaining= voiceManager.getParticipants(channelId)
+        if(remaining.size==0){
+          mediaSoupManager.destroyRouter(channelId)
+        }
+      }
+      
       console.log(`Socket disconnected: ${socket.userId}`)
     })
   } catch (error) {
