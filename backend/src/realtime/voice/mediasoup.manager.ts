@@ -150,14 +150,14 @@ class MediaSoupManager {
   }
 
   async getRouterRtpCapabilities(channelId: string) {
-    // for consumer to be called
+    // for transport to be created at client side
     let router = this.routers.get(channelId);
 
     if (!router) {
       router= await this.getOrCreateRouter(channelId) // if not create one
     }
-
-    return router.rtpCapabilities;
+    
+    return router.rtpCapabilities;  // sending promise so await at handler
   }
 
   async consume(

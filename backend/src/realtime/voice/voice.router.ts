@@ -24,9 +24,8 @@ export function attachVoiceRouter(socket: AuthedSocket) {
         return;
       }
 
-      console.log("WS EVENT:", parsedEvent);
       const event = parsedEvent as ClientEvent; // Cast the parsed event to the ClientEvent union type for type-safe handling
-      console.log(event);
+      console.log(event) // remove later
       switch (event.type) {
         case "VOICE_JOIN":
           handleJoin(socket, event.payload.voiceChannelId);
@@ -188,19 +187,22 @@ async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
   }
 }
 
-function handleGetRtpCapabilities(socket: AuthedSocket) {
+async function handleGetRtpCapabilities(socket: AuthedSocket) {
   try {
     console.log("inside getRTp capabilities");
     const channelId = voiceManager.getChannel(socket);
     if (!channelId) return;
 
     const rtpCapabilities =
-      mediaSoupManager.getRouterRtpCapabilities(channelId);
+      await mediaSoupManager.getRouterRtpCapabilities(channelId);  // getting promise hence resolve by await
 
+      console.log(rtpCapabilities)
     socket.send(
       JSON.stringify({
         type: "VOICE_ROUTER_RTP_CAPABILITIES",
-        payload: { rtpCapabilities },
+        payload: { 
+          rtpCapabilities: rtpCapabilities 
+        },
       }),
     );
   } catch (error: any) {
