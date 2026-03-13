@@ -71,7 +71,7 @@ class MediaSoupManager {
       listenIps: [
         {
           ip: "0.0.0.0",
-          // announcedIp: env.PUBLIC_IP! // add announceIp in prod here
+          announcedIp: "127.0.0.1" // add announceIp in prod here (temp for now)
         },
       ],
       enableUdp: true,
@@ -145,6 +145,7 @@ class MediaSoupManager {
       producer.close();
       this.producers.delete(socket);
     });
+    console.log("producer:",producer.paused)
 
     return producer.id;
   }
@@ -187,7 +188,7 @@ class MediaSoupManager {
     const consumer = await socketTransports.recvTransport.consume({
       producerId,
       rtpCapabilities,
-      paused: false,
+      paused: true,
     });
 
     let socketConsumers = this.consumers.get(socket);
@@ -198,6 +199,7 @@ class MediaSoupManager {
     }
 
     socketConsumers.push(consumer);
+    console.log("consumer before reuming",consumer.paused)
 
     consumer.on("transportclose", () => {
       consumer.close();
@@ -210,6 +212,18 @@ class MediaSoupManager {
       rtpParameters: consumer.rtpParameters,
     };
   }
+
+  async resumeConsumer(socket: AuthedSocket) {
+  const consumers = this.consumers.get(socket);
+
+  if (!consumers) return;
+
+  for (const consumer of consumers) {
+    await consumer.resume();
+    console.log("consumer after resuming",consumer.paused)
+  }
+  
+}
 
   // send list of exiting users in voice channel to new client
   getProducersInChannel(channelId: string): string[] {

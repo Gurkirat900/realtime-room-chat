@@ -25,7 +25,7 @@ export function attachVoiceRouter(socket: AuthedSocket) {
       }
 
       const event = parsedEvent as ClientEvent; // Cast the parsed event to the ClientEvent union type for type-safe handling
-      console.log(event) // remove later
+      console.log(event); // remove later
       switch (event.type) {
         case "VOICE_JOIN":
           handleJoin(socket, event.payload.voiceChannelId);
@@ -54,6 +54,10 @@ export function attachVoiceRouter(socket: AuthedSocket) {
         case "VOICE_CONSUME":
           handleConsume(socket, event as ConsumeEvent);
           break;
+
+        case "VOICE_RESUME_CONSUMER":
+          handleResumeConsumer(socket);
+          break;
       }
     } catch (error) {
       socket.send(
@@ -76,7 +80,7 @@ async function handleJoin(socket: AuthedSocket, voiceChannelId: string) {
   }
 
   // create router if first user in channel
-  await mediaSoupManager.getOrCreateRouter(voiceChannelId)
+  await mediaSoupManager.getOrCreateRouter(voiceChannelId);
   const participants = voiceManager.getParticipants(voiceChannelId);
 
   socket.send(
@@ -137,6 +141,7 @@ async function handleCreateTransport(
     JSON.stringify({
       type: "VOICE_TRANSPORT_CREATED",
       payload: params,
+      direction: event.payload.direction,
     }),
   );
 }
@@ -194,14 +199,13 @@ async function handleGetRtpCapabilities(socket: AuthedSocket) {
     if (!channelId) return;
 
     const rtpCapabilities =
-      await mediaSoupManager.getRouterRtpCapabilities(channelId);  // getting promise hence resolve by await
+      await mediaSoupManager.getRouterRtpCapabilities(channelId); // getting promise hence resolve by await
 
-      console.log(rtpCapabilities)
     socket.send(
       JSON.stringify({
         type: "VOICE_ROUTER_RTP_CAPABILITIES",
-        payload: { 
-          rtpCapabilities: rtpCapabilities 
+        payload: {
+          rtpCapabilities: rtpCapabilities,
         },
       }),
     );
@@ -211,18 +215,26 @@ async function handleGetRtpCapabilities(socket: AuthedSocket) {
 }
 
 async function handleConsume(socket: AuthedSocket, event: ConsumeEvent) {
-  const consumer = await mediaSoupManager.consume(
-    socket,
-    event.payload.producerId,
-    event.payload.rtpCapabilities,
-  );
+  const { rtpCapabilities } = event.payload;
+  const channelId = voiceManager.getChannel(socket);
+  if (!channelId) return;
 
-  socket.send(
-    JSON.stringify({
-      type: "VOICE_CONSUMER_CREATED",
-      payload: consumer,
-    }),
-  );
+  const producers = mediaSoupManager.getProducersInChannel(channelId);
+
+  for (const producer of producers) {
+    const consumer = await mediaSoupManager.consume(
+      socket,
+      producer,
+      rtpCapabilities,
+    );
+
+    socket.send(
+      JSON.stringify({
+        type: "VOICE_CONSUMER_CREATED",
+        payload: consumer,
+      }),
+    );
+  }
 }
 
 function broadcastUserJoined(
@@ -260,5 +272,13 @@ function broadcastUserLeft(channelId: string, userId: string) {
         },
       }),
     );
+  }
+}
+
+async function handleResumeConsumer(socket: AuthedSocket) {
+  try {
+    await mediaSoupManager.resumeConsumer(socket);
+  } catch (err) {
+    console.error("resume consumer error", err);
   }
 }

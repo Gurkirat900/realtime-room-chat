@@ -61,6 +61,10 @@ export interface ConsumeEvent {
   }
 }
 
+export interface ResumeConsumerEvent{
+  type: "VOICE_RESUME_CONSUMER"
+}
+
 // Union type for all possible client events, allowing for type-safe handling of incoming messages based on their type field
 export type ClientEvent =  
   | SendMessageEvent
@@ -71,6 +75,7 @@ export type ClientEvent =
   | ProduceEvent
   | GetRtpCapabilities
   | ConsumeEvent
+  | ResumeConsumerEvent
 
 export interface RoomSubscribedEvent {
   type: "ROOM_SUBSCRIBED"
