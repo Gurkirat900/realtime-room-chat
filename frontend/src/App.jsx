@@ -10,9 +10,9 @@ export default function VoiceChannel() {
   const pendingProduceCallback = useRef(null);
   const pendingTransportsRef = useRef([]); // queue to handle async events so device is loaded before calling create transport event
   const tokenA =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1MTcwYzYzOS04ODZhLTQxMDQtYWRlYi1hOTY2ZWIxZDg0NGEiLCJpYXQiOjE3NzM0MzExNTAsImV4cCI6MTc3MzY5MDM1MH0.XuonsDEOxkap6fgG74Us-noixwQ09hp5dCK0kp1VyXM";
+    "anything";
   const tokenB =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2M2U3ZWQ0ZS1iOWIyLTRiZTItYjI2Yi0zODM5MzcxNGM4YzAiLCJpYXQiOjE3NzM0MzEyMTIsImV4cCI6MTc3MzY5MDQxMn0.gX7uXKc2YFx8PYgIkmLXvKlgwej3fLpIdzA1R9nY9RI";
+    "anything";
 
   const connect = () => {
     const token = window.location.hash === "#user2" ? tokenB : tokenA;
@@ -255,7 +255,7 @@ export default function VoiceChannel() {
         JSON.stringify({
           type: "VOICE_JOIN",
           payload: {
-            voiceChannelId: "a6bdc7ed-5bd3-4989-997e-38b41a35911c",
+            voiceChannelId: "anything",
           },
         }),
       );
