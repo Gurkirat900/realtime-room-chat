@@ -27,16 +27,16 @@ class TransportManager {
     this.sendTransport.on(
       "connect",
       ({ dtlsParameters }, callback) => {
-        onConnect(dtlsParameters, "send")  // custom callback(tell voiceClient)
+        onConnect(dtlsParameters, "send")  // custom callback(tell voiceClient to send Connect transport event to server)
         callback()                        // mediasoup callback(tell mediasoup "done")
       }
     )
 
     // produce event
-    this.sendTransport.on(
+    this.sendTransport.on(     
       "produce",
       ({ kind, rtpParameters }, callback) => {
-        onProduce(kind, rtpParameters)
+        onProduce(kind, rtpParameters)    // tell Voice Client to send VOICE_PRODUCE event
         // IMPORTANT: callback will be called later after server responds
       }
     )
