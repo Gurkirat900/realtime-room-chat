@@ -1,7 +1,7 @@
 import * as mediasoupClient from "mediasoup-client"
 
-type OnConnectCallback = (dtlsParameters: any, direction: "send" | "recv") => void
-type OnProduceCallback = (kind: string, rtpParameters: any) => void
+type OnConnectCallback = (dtlsParameters: any, direction: "send" | "recv", callback: Function) => void
+type OnProduceCallback = (kind: string, rtpParameters: any, callback: Function) => void
 
 class TransportManager {
   private sendTransport: mediasoupClient.types.Transport | null = null
@@ -27,8 +27,7 @@ class TransportManager {
     this.sendTransport.on(
       "connect",
       ({ dtlsParameters }, callback) => {
-        onConnect(dtlsParameters, "send")  // custom callback(tell voiceClient to send Connect transport event to server)
-        callback()                        // mediasoup callback(tell mediasoup "done")
+        onConnect(dtlsParameters, "send", callback)  // custom callback(tell voiceClient to send Connect transport event to server)
       }
     )
 
@@ -36,8 +35,7 @@ class TransportManager {
     this.sendTransport.on(     
       "produce",
       ({ kind, rtpParameters }, callback) => {
-        onProduce(kind, rtpParameters)    // tell Voice Client to send VOICE_PRODUCE event
-        // IMPORTANT: callback will be called later after server responds
+        onProduce(kind, rtpParameters, callback)    // tell Voice Client to send VOICE_PRODUCE event
       }
     )
 
@@ -64,8 +62,7 @@ class TransportManager {
     this.recvTransport.on(
       "connect",
       ({ dtlsParameters }, callback) => {
-        onConnect(dtlsParameters, "recv")
-        callback()
+        onConnect(dtlsParameters, "recv",callback)
       }
     )
 

@@ -19,7 +19,7 @@
 
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["*"]  // to allow imports such as "@/core/" instead of "../../core"
     }
   },
   "references": [
