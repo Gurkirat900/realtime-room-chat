@@ -1,6 +1,5 @@
 import * as mediasoup from "mediasoup";
 import type { AuthedSocket } from "../types.js";
-import { env } from "../../config/env.js";
 import { voiceManager } from "./voice.manager.js";
 
 class MediaSoupManager {
@@ -17,7 +16,10 @@ class MediaSoupManager {
   >();
 
   private producers = new Map<AuthedSocket, mediasoup.types.Producer>();
-  private consumers = new Map<AuthedSocket, mediasoup.types.Consumer[]>();
+  private consumers = new Map<
+    AuthedSocket,
+    Map<string, mediasoup.types.Consumer>
+  >(); // socket->(produverid,consumer)
 
   private readonly mediaCodecs: mediasoup.types.RtpCodecCapability[] = [
     {
@@ -55,7 +57,7 @@ class MediaSoupManager {
     });
 
     this.routers.set(voiceChannelId, router);
-    console.log("Router created")  // remove later
+    console.log("Router created"); // remove later
 
     return router;
   }
@@ -71,7 +73,7 @@ class MediaSoupManager {
       listenIps: [
         {
           ip: "0.0.0.0",
-          announcedIp: "127.0.0.1" // add announceIp in prod here (temp for now)
+          announcedIp: "127.0.0.1", // add announceIp in prod here (temp for now)
         },
       ],
       enableUdp: true,
@@ -145,7 +147,7 @@ class MediaSoupManager {
       producer.close();
       this.producers.delete(socket);
     });
-    console.log("producer:",producer.paused)
+    console.log("producer:", producer.paused);
 
     return producer.id;
   }
@@ -155,10 +157,10 @@ class MediaSoupManager {
     let router = this.routers.get(channelId);
 
     if (!router) {
-      router= await this.getOrCreateRouter(channelId) // if not create one
+      router = await this.getOrCreateRouter(channelId); // if not create one
     }
-    
-    return router.rtpCapabilities;  // sending promise so await at handler
+
+    return router.rtpCapabilities; // sending promise so await at handler
   }
 
   async consume(
@@ -185,21 +187,36 @@ class MediaSoupManager {
       throw new Error("Client cannot consume this producer");
     }
 
+    let socketConsumers = this.consumers.get(socket);
+
+    if (!socketConsumers) {
+      socketConsumers = new Map();
+      this.consumers.set(socket, socketConsumers);
+    }
+
+    //  Check if consumer already exists
+    if (socketConsumers.has(producerId)) {
+      console.log("Consumer already exists for:", producerId);
+
+      const existing = socketConsumers.get(producerId)!;
+
+      return {
+        id: existing.id,
+        producerId,
+        kind: existing.kind,
+        rtpParameters: existing.rtpParameters,
+      };
+    }
+
     const consumer = await socketTransports.recvTransport.consume({
       producerId,
       rtpCapabilities,
       paused: true,
     });
 
-    let socketConsumers = this.consumers.get(socket);
+    socketConsumers.set(producerId, consumer); // will set this.consumer too => map are set by refernce
 
-    if (!socketConsumers) {
-      socketConsumers = [];
-      this.consumers.set(socket, socketConsumers);
-    }
-
-    socketConsumers.push(consumer);
-    console.log("consumer before reuming",consumer.paused)
+    console.log("consumer before reuming", consumer.paused);
 
     consumer.on("transportclose", () => {
       consumer.close();
@@ -213,17 +230,26 @@ class MediaSoupManager {
     };
   }
 
-  async resumeConsumer(socket: AuthedSocket) {
-  const consumers = this.consumers.get(socket);
+  async resumeConsumer(socket: AuthedSocket, consumerId: string) {
+    const socketConsumers = this.consumers.get(socket);
+    if (!socketConsumers) return;
 
-  if (!consumers) return;
+    const consumer = socketConsumers.get(consumerId);
 
-  for (const consumer of consumers) {
+    if (!consumer) {
+      console.warn("Consumer not found:", consumerId);
+      return;
+    }
+
+    if (!consumer.paused) {
+      console.log("Consumer already resumed:", consumerId);
+      return;
+    }
+
     await consumer.resume();
-    console.log("consumer after resuming",consumer.paused)
+
+    console.log("consumer resumed:", consumerId);
   }
-  
-}
 
   // send list of exiting users in voice channel to new client
   getProducersInChannel(channelId: string): string[] {
@@ -256,7 +282,8 @@ class MediaSoupManager {
     this.transports.delete(socket);
   }
 
-  destroyRouter(channelId: string) {  // when all user leaves voice channel
+  destroyRouter(channelId: string) {
+    // when all user leaves voice channel
     const router = this.routers.get(channelId);
 
     if (!router) return;

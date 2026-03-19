@@ -56,13 +56,15 @@ export interface GetRtpCapabilities{
 export interface ConsumeEvent {
   type: "VOICE_CONSUME"
   payload: {
-    producerId: string,
     rtpCapabilities: any
   }
 }
 
 export interface ResumeConsumerEvent{
   type: "VOICE_RESUME_CONSUMER"
+  payload:{
+    consumerId: string
+  }
 }
 
 // Union type for all possible client events, allowing for type-safe handling of incoming messages based on their type field

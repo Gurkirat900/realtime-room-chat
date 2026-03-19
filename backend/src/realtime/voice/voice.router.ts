@@ -6,10 +6,10 @@ import type {
   CreateTransportEvent,
   ProduceEvent,
   RawClientEvent,
+  ResumeConsumerEvent,
 } from "../types.js";
 import { voiceManager } from "./voice.manager.js";
 import { mediaSoupManager } from "./mediasoup.manager.js";
-import { json } from "zod";
 
 export function attachVoiceRouter(socket: AuthedSocket) {
   socket.on("message", (data) => {
@@ -57,7 +57,7 @@ export function attachVoiceRouter(socket: AuthedSocket) {
           break;
 
         case "VOICE_RESUME_CONSUMER":
-          handleResumeConsumer(socket);
+          handleResumeConsumer(socket, event as ResumeConsumerEvent);
           break;
       }
     } catch (error) {
@@ -158,7 +158,8 @@ async function handleConnectTransport(
   );
   socket.send(
     JSON.stringify({
-      type: "VOICE_TRANSPORT_CONNECTED"
+      type: "VOICE_TRANSPORT_CONNECTED",
+      direction: event.payload.direction
     })
   )
 }
@@ -281,9 +282,9 @@ function broadcastUserLeft(channelId: string, userId: string) {
   }
 }
 
-async function handleResumeConsumer(socket: AuthedSocket) {
+async function handleResumeConsumer(socket: AuthedSocket, event: ResumeConsumerEvent) {
   try {
-    await mediaSoupManager.resumeConsumer(socket);
+    await mediaSoupManager.resumeConsumer(socket, event.payload.consumerId);
   } catch (err) {
     console.error("resume consumer error", err);
   }
