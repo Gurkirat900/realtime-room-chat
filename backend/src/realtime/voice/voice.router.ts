@@ -9,6 +9,7 @@ import type {
 } from "../types.js";
 import { voiceManager } from "./voice.manager.js";
 import { mediaSoupManager } from "./mediasoup.manager.js";
+import { json } from "zod";
 
 export function attachVoiceRouter(socket: AuthedSocket) {
   socket.on("message", (data) => {
@@ -155,6 +156,11 @@ async function handleConnectTransport(
     event.payload.direction,
     event.payload.dtlsParameters,
   );
+  socket.send(
+    JSON.stringify({
+      type: "VOICE_TRANSPORT_CONNECTED"
+    })
+  )
 }
 
 async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
