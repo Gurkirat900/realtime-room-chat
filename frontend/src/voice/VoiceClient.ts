@@ -189,6 +189,9 @@ export class VoiceClient {
     this.socket.send(
       JSON.stringify({
         type: "VOICE_RESUME_CONSUMER",
+        payload:{
+            consumerId: msg.payload.id
+        }
       }),
     );
   }

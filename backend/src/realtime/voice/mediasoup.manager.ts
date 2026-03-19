@@ -234,19 +234,26 @@ class MediaSoupManager {
     const socketConsumers = this.consumers.get(socket);
     if (!socketConsumers) return;
 
-    const consumer = socketConsumers.get(consumerId);
+    let targetConsumer: mediasoup.types.Consumer | undefined;
 
-    if (!consumer) {
+    for (const consumer of socketConsumers.values()) {
+      if (consumer.id === consumerId) {
+        targetConsumer = consumer;
+        break;
+      }
+    }
+
+    if (!targetConsumer) {
       console.warn("Consumer not found:", consumerId);
       return;
     }
 
-    if (!consumer.paused) {
+    if (!targetConsumer.paused) {
       console.log("Consumer already resumed:", consumerId);
       return;
     }
 
-    await consumer.resume();
+    await targetConsumer.resume();
 
     console.log("consumer resumed:", consumerId);
   }
