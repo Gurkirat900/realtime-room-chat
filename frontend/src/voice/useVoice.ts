@@ -1,0 +1,55 @@
+import { useEffect, useRef, useState } from "react"
+import { VoiceClient } from "@/voice/VoiceClient.ts"
+
+export function useVoice(socket: WebSocket) {
+  const vcRef = useRef<VoiceClient | null>(null)
+
+  const [participants, setParticipants] = useState<string[]>([])
+  const [isConnected, setIsConnected] = useState(false)
+
+  useEffect(() => {
+    const vc = new VoiceClient(socket)
+    vcRef.current = vc
+
+    //  HANDLERS (stable references)
+    const handleParticipants = (users: string[]) => {
+      setParticipants(users)
+      setIsConnected(true)
+    }
+
+    const handleUserLeft = (userId: string) => {
+      setParticipants(prev => prev.filter(id => id !== userId))
+    }
+
+    //  SUBSCRIBE
+    vc.on("participants", handleParticipants)
+    vc.on("userLeft", handleUserLeft)
+
+    return () => {
+      //  UNSUBSCRIBE 
+      vc.off("participants", handleParticipants)
+      vc.off("userLeft", handleUserLeft)
+
+      //  CLEANUP
+      vc.leaveChannel()
+      vc.cleanup() 
+    }
+  }, [socket]) 
+
+  const joinChannel = (id: string) => {
+    vcRef.current?.joinChannel(id)
+  }
+
+  const leaveChannel = () => {
+    vcRef.current?.leaveChannel()
+    setIsConnected(false)
+    setParticipants([])
+  }
+
+  return {
+    participants,
+    isConnected,
+    joinChannel,
+    leaveChannel,
+  }
+}
