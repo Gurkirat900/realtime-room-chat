@@ -3,11 +3,14 @@ type Listener = (data: any) => void
 export class WebSocketClient {
   private socket: WebSocket | null = null
   private listeners: Record<string, Listener[]> = {}  // event_type-> handler(specific fn)
+  private isConnected:boolean= false;
 
   connect(url: string) {
+    if(this.socket) return;
     this.socket = new WebSocket(url)
 
     this.socket.onopen = () => {
+      this.isConnected= true;
       console.log("WS Connected")
     }
 
@@ -17,13 +20,22 @@ export class WebSocketClient {
     }
 
     this.socket.onclose = () => {
+        this.isConnected= false;
       console.log("WS Disconnected")
       // later: add reconnect logic
+    }
+
+    this.socket.onerror = (err) => {
+      console.error("WS Error:", err)
     }
   }
 
   send(type: string, payload?: any) {
-    this.socket?.send(JSON.stringify({ type, payload }))
+    if (!this.socket || !this.isConnected) {
+      console.warn("WS not connected yet")
+      return
+    }
+    this.socket.send(JSON.stringify({ type, payload }))
   }
 
   on(type: string, cb: Listener) {   // prevents race condition for onmessage fn

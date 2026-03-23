@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { VoiceClient } from "@/voice/VoiceClient.ts"
 import { ws } from "@/core/socket/WebSocketClient"
 
-export function useVoice(socket: WebSocket) {
+export function useVoice() {
   const vcRef = useRef<VoiceClient | null>(null)
 
   const [participants, setParticipants] = useState<string[]>([])
@@ -35,7 +35,7 @@ export function useVoice(socket: WebSocket) {
       vc.leaveChannel()
       vc.cleanup() 
     }
-  }, [socket]) 
+  }, []) 
 
   const joinChannel = (id: string) => {
     vcRef.current?.joinChannel(id)
