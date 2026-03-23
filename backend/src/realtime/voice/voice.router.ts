@@ -159,7 +159,9 @@ async function handleConnectTransport(
   socket.send(
     JSON.stringify({
       type: "VOICE_TRANSPORT_CONNECTED",
-      direction: event.payload.direction
+      payload:{
+        direction: event.payload.direction
+      }
     })
   )
 }
