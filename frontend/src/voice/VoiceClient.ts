@@ -2,11 +2,13 @@ import { deviceManager } from "@/core/mediasoup/deviceManager";
 import { transportManager } from "@/core/mediasoup/transportManager";
 import { producerManager } from "@/core/mediasoup/producerManager";
 import { consumerManager } from "@/core/mediasoup/consumerManager";
+import { WebSocketClient } from "@/core/socket/WebSocketClient";
 
 type TransportDirection = "send" | "recv";
 
 export class VoiceClient {
-  private socket: WebSocket;
+  private ws: WebSocketClient;
+
 
   private pendingConnectCallbacks: Partial<
     // {send? -> func | recv? -> func} Partial makes it optional to have a direction
@@ -17,7 +19,71 @@ export class VoiceClient {
 
   private shouldConsume = false; // used when new user tries to consume a producer but device hasnt loaded yet
 
-  private listeners: Record<string, Function[]> = {};
+  private listeners: Record<string, Function[]> = {}; // Ui event system
+
+  
+  constructor(ws: WebSocketClient) {
+    this.ws = ws;
+
+    // Register WS event listeners
+    this.ws.on("VOICE_PARTICIPANTS", this.handleParticipants);
+    this.ws.on(
+      "VOICE_ROUTER_RTP_CAPABILITIES",
+      this.handleRouterCapabilities,
+    );
+    this.ws.on("VOICE_TRANSPORT_CREATED", this.handleTransportCreated);
+    this.ws.on(
+      "VOICE_TRANSPORT_CONNECTED",
+      this.handleTransportConnected,
+    );
+    this.ws.on("VOICE_PRODUCED", this.handleProduced);
+    this.ws.on("VOICE_EXISTING_PRODUCERS", this.handleExistingProducers);
+    this.ws.on("VOICE_NEW_PRODUCER", this.handleNewProducer);
+    this.ws.on("VOICE_CONSUMER_CREATED", this.handleConsumerCreated);
+    this.ws.on("VOICE_USER_LEFT", this.handleUserLeft);
+  }
+
+  // Public Apis=>
+  joinChannel(voiceChannelId: string) {
+    this.ws.send("VOICE_JOIN", { voiceChannelId });
+  }
+
+ leaveChannel() {
+    this.ws.send("VOICE_LEAVE");
+  }
+
+  cleanup() {
+    producerManager.stopMic();
+    consumerManager.cleanup();
+    transportManager.reset();
+
+    // remove WS listeners
+    this.ws.off("VOICE_PARTICIPANTS", this.handleParticipants);
+    this.ws.off(
+      "VOICE_ROUTER_RTP_CAPABILITIES",
+      this.handleRouterCapabilities,
+    );
+    this.ws.off("VOICE_TRANSPORT_CREATED", this.handleTransportCreated);
+    this.ws.off(
+      "VOICE_TRANSPORT_CONNECTED",
+      this.handleTransportConnected,
+    );
+    this.ws.off("VOICE_PRODUCED", this.handleProduced);
+    this.ws.off(
+      "VOICE_EXISTING_PRODUCERS",
+      this.handleExistingProducers,
+    );
+    this.ws.off("VOICE_NEW_PRODUCER", this.handleNewProducer);
+    this.ws.off(
+      "VOICE_CONSUMER_CREATED",
+      this.handleConsumerCreated,
+    );
+    this.ws.off("VOICE_USER_LEFT", this.handleUserLeft);
+
+    // clear UI listeners
+    this.listeners = {};
+  }
+
 
   on(event: string, cb: Function) {
     // used by useVoice.ts
@@ -31,117 +97,39 @@ export class VoiceClient {
 
   private emit(event: string, data?: any) {
     // EVENT emitter=> for UI
-    this.listeners[event]?.forEach((cb) => cb(data));
+    this.listeners[event]?.forEach((cb) => cb(data));  // execute every fn
   }
 
-  constructor(socket: WebSocket) {
-    this.socket = socket;
-
-    this.socket.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      this.handleSocketEvent(msg);
-    };
-  }
-
-  // Public Apis=>
-  joinChannel(voiceChannelId: string) {
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_JOIN",
-        payload: { voiceChannelId },
-      }),
-    );
-  }
-
-  leaveChannel() {
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_LEAVE",
-      }),
-    );
-  }
-
-  cleanup() {
-    producerManager.stopMic();
-    consumerManager.cleanup();
-    transportManager.reset();
-
-    this.listeners = {};
-  }
-
-  private async handleSocketEvent(event: any) {
-    switch (event.type) {
-      case "VOICE_PARTICIPANTS":
-        this.emit("participants", event.payload.users); // userIds of existing participants emitted to react in useVoice.ts
-        this.requestRtpCapabilities();
-        break;
-
-      case "VOICE_ROUTER_RTP_CAPABILITIES":
-        this.handleRouterCapabilities(event);
-        break;
-
-      case "VOICE_TRANSPORT_CREATED":
-        this.handleTransportCreated(event);
-        break;
-
-      case "VOICE_TRANSPORT_CONNECTED":
-        this.handleTransportConnected(event);
-        break;
-
-      case "VOICE_PRODUCED":
-        this.handleProduced(event);
-        break;
-
-      case "VOICE_EXISTING_PRODUCERS":
-        this.handleExistingProducers();
-        break;
-
-      case "VOICE_NEW_PRODUCER":
-        this.handleNewProducer();
-        break;
-
-      case "VOICE_CONSUMER_CREATED":
-        this.handleConsumerCreated(event);
-        break;
-
-      case "VOICE_USER_LEFT":
-        consumerManager.removeConsumer(event.payload.userId);
-        this.emit("UserLeft", event.payload.userId);
-    }
-  }
+  
 
   // ----------------------------
-  // FLOW HANDLERS
+  // WS HANDLERS
   // ----------------------------
+
+  private handleParticipants = (payload: any) => {
+    this.emit("participants", payload.users);   // userIds of existing participants emitted to react in useVoice.ts
+    this.requestRtpCapabilities();
+  };
 
   private requestRtpCapabilities() {
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_GET_RTP_CAPABILITIES",
-      }),
-    );
+    this.ws.send("VOICE_GET_RTP_CAPABILITIES");
   }
 
-  private async handleRouterCapabilities(msg: any) {
-    await deviceManager.loadDevice(msg.payload.rtpCapabilities);
+  private handleRouterCapabilities= async (payload: any) =>{
+    await deviceManager.loadDevice(payload.rtpCapabilities);
 
     // create send transport
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_CREATE_TRANSPORT",
-        payload: { direction: "send" },
-      }),
-    );
+    this.ws.send("VOICE_CREATE_TRANSPORT", { direction: "send" });
   }
 
-  private handleTransportCreated(msg: any) {
+  private handleTransportCreated= (payload: any)=> {
     const device = deviceManager.getDevice();
-    const { direction } = msg;
+    const { direction, ...params } = payload;
 
     if (direction === "send") {
       transportManager.createSendTransport(
         device,
-        msg.payload,
+        params,
         this.onConnect,
         this.onProduce,
       );
@@ -149,7 +137,7 @@ export class VoiceClient {
       // start mic → triggers connect + produce
       producerManager.startMic(transportManager.getSendTransport());
     } else {
-      transportManager.createRecvTransport(device, msg.payload, this.onConnect);
+      transportManager.createRecvTransport(device, params, this.onConnect);
 
       // Edge case handling (if recv transport was not created before consuming then consume now)
       if (this.shouldConsume) {
@@ -159,8 +147,8 @@ export class VoiceClient {
     }
   }
 
-  private handleTransportConnected(msg: any) {
-    const direction: TransportDirection = msg.payload.direction;
+  private handleTransportConnected= (payload: any)=> {
+    const direction: TransportDirection = payload.direction;
 
     const callback = this.pendingConnectCallbacks[direction];
 
@@ -170,25 +158,22 @@ export class VoiceClient {
     }
   }
 
-  private handleProduced(msg: any) {
+  private handleProduced= (payload: any) =>{
     if (this.pendingProduceCallback) {
       this.pendingProduceCallback({
-        id: msg.payload.producerId,
+        id: payload.producerId,
       });
 
       this.pendingProduceCallback = null;
 
       // now create recv transport
-      this.socket.send(
-        JSON.stringify({
-          type: "VOICE_CREATE_TRANSPORT",
-          payload: { direction: "recv" },
-        }),
-      );
+      this.ws.send("VOICE_CREATE_TRANSPORT", {
+        direction: "recv",
+      });
     }
   }
 
-  private handleExistingProducers() {
+  private handleExistingProducers= ()=> {
     //  If recv transport not ready → mark intent
     if (!transportManager.hasRecvTransport()) {
       this.shouldConsume = true;
@@ -198,7 +183,7 @@ export class VoiceClient {
     this.requestConsumeAll();
   }
 
-  private handleNewProducer() {
+  private handleNewProducer= ()=> {
     // same logic as existing
     if (!transportManager.hasRecvTransport()) {
       this.shouldConsume = true;
@@ -208,24 +193,24 @@ export class VoiceClient {
     this.requestConsumeAll();
   }
 
-  private async handleConsumerCreated(msg: any) {
+  private handleConsumerCreated= async (payload: any) =>{
     const transport = transportManager.getRecvTransport();
 
-    await consumerManager.consume(transport, msg.payload);
+    await consumerManager.consume(transport,payload);
 
     // tell server to resume
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_RESUME_CONSUMER",
-        payload: {
-          consumerId: msg.payload.id,
-        },
-      }),
-    );
+    this.ws.send("VOICE_RESUME_CONSUMER", {
+      consumerId: payload.id,
+    });
   }
 
+  private handleUserLeft = (payload: any) => {
+    consumerManager.removeConsumer(payload.userId);
+    this.emit("UserLeft", payload.userId);
+  };
+
   // ----------------------------
-  // CALLBACK HANDLERS
+  // MEDIASOUP CALLBACK HANDLERS
   // ----------------------------
 
   private onConnect = (
@@ -235,12 +220,10 @@ export class VoiceClient {
   ) => {
     this.pendingConnectCallbacks[direction] = callback;
 
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_CONNECT_TRANSPORT",
-        payload: { dtlsParameters, direction },
-      }),
-    );
+    this.ws.send("VOICE_CONNECT_TRANSPORT", {
+      dtlsParameters,
+      direction,
+    });
   };
 
   private onProduce = (
@@ -250,12 +233,10 @@ export class VoiceClient {
   ) => {
     this.pendingProduceCallback = callback;
 
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_PRODUCE",
-        payload: { kind, rtpParameters },
-      }),
-    );
+    this.ws.send("VOICE_PRODUCE", {
+      kind,
+      rtpParameters,
+    });
   };
 
   // ----------------------------
@@ -263,13 +244,10 @@ export class VoiceClient {
   // ----------------------------
 
   private requestConsumeAll() {
-    this.socket.send(
-      JSON.stringify({
-        type: "VOICE_CONSUME",
-        payload: {
-          rtpCapabilities: deviceManager.getDevice().recvRtpCapabilities,
-        },
-      }),
-    );
+    this.ws.send("VOICE_CONSUME", {
+      rtpCapabilities:
+        deviceManager.getDevice().recvRtpCapabilities,
+    });
   }
+  
 }

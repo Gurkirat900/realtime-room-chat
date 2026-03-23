@@ -11,7 +11,7 @@ export class WebSocketClient {
       console.log("WS Connected")
     }
 
-    this.socket.onmessage = (event) => {
+    this.socket.onmessage = (event) => {  // handle server events
       const msg = JSON.parse(event.data)
       this.emit(msg.type, msg.payload)
     }
@@ -36,7 +36,7 @@ export class WebSocketClient {
   }
 
   private emit(type: string, payload?: any) {
-    this.listeners[type]?.forEach(cb => cb(payload))   // execute each fn
+    this.listeners[type]?.forEach(cb => cb(payload))   // execute each fn(handlecreateTransport etc in VoiceClinet and messageClient)
   }
 }
 

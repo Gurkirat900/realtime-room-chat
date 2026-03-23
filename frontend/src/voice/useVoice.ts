@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { VoiceClient } from "@/voice/VoiceClient.ts"
+import { ws } from "@/core/socket/WebSocketClient"
 
 export function useVoice(socket: WebSocket) {
   const vcRef = useRef<VoiceClient | null>(null)
@@ -8,7 +9,7 @@ export function useVoice(socket: WebSocket) {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const vc = new VoiceClient(socket)
+    const vc = new VoiceClient(ws)
     vcRef.current = vc
 
     //  HANDLERS (stable references)
@@ -23,7 +24,7 @@ export function useVoice(socket: WebSocket) {
 
     //  SUBSCRIBE
     vc.on("participants", handleParticipants)
-    vc.on("userLeft", handleUserLeft)
+    vc.on("UserLeft", handleUserLeft)
 
     return () => {
       //  UNSUBSCRIBE 
