@@ -9,12 +9,30 @@ export class VoiceClient {
   private socket: WebSocket;
 
   private pendingConnectCallbacks: Partial<
+    // {send? -> func | recv? -> func} Partial makes it optional to have a direction
     Record<TransportDirection, Function>
   > = {};
 
   private pendingProduceCallback: Function | null = null;
 
-  private shouldConsume = false; // used when new user tries to consume a  producer but device hasnt loaded yet
+  private shouldConsume = false; // used when new user tries to consume a producer but device hasnt loaded yet
+
+  private listeners: Record<string, Function[]> = {};
+
+  on(event: string, cb: Function) {
+    // used by useVoice.ts
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(cb);
+  }
+
+  off(event: string, cb: Function) {
+    this.listeners[event] = this.listeners[event]?.filter((f) => f !== cb);
+  }
+
+  private emit(event: string, data?: any) {
+    // EVENT emitter=> for UI
+    this.listeners[event]?.forEach((cb) => cb(data));
+  }
 
   constructor(socket: WebSocket) {
     this.socket = socket;
@@ -43,9 +61,18 @@ export class VoiceClient {
     );
   }
 
+  cleanup() {
+    producerManager.stopMic();
+    consumerManager.cleanup();
+    transportManager.reset();
+
+    this.listeners = {};
+  }
+
   private async handleSocketEvent(event: any) {
     switch (event.type) {
       case "VOICE_PARTICIPANTS":
+        this.emit("participants", event.payload.users); // userIds of existing participants emitted to react in useVoice.ts
         this.requestRtpCapabilities();
         break;
 
@@ -79,6 +106,7 @@ export class VoiceClient {
 
       case "VOICE_USER_LEFT":
         consumerManager.removeConsumer(event.payload.userId);
+        this.emit("UserLeft", event.payload.userId);
     }
   }
 
@@ -189,9 +217,9 @@ export class VoiceClient {
     this.socket.send(
       JSON.stringify({
         type: "VOICE_RESUME_CONSUMER",
-        payload:{
-            consumerId: msg.payload.id
-        }
+        payload: {
+          consumerId: msg.payload.id,
+        },
       }),
     );
   }
@@ -239,7 +267,7 @@ export class VoiceClient {
       JSON.stringify({
         type: "VOICE_CONSUME",
         payload: {
-          rtpCapabilities: deviceManager.getDevice().rtpCapabilities,
+          rtpCapabilities: deviceManager.getDevice().recvRtpCapabilities,
         },
       }),
     );
