@@ -141,8 +141,10 @@ async function handleCreateTransport(
   socket.send(
     JSON.stringify({
       type: "VOICE_TRANSPORT_CREATED",
-      payload: params,
-      direction: event.payload.direction,
+      payload: {
+        ...params,
+        direction: event.payload.direction,
+      },
     }),
   );
 }
@@ -159,11 +161,11 @@ async function handleConnectTransport(
   socket.send(
     JSON.stringify({
       type: "VOICE_TRANSPORT_CONNECTED",
-      payload:{
-        direction: event.payload.direction
-      }
-    })
-  )
+      payload: {
+        direction: event.payload.direction,
+      },
+    }),
+  );
 }
 
 async function handleProduce(socket: AuthedSocket, event: ProduceEvent) {
@@ -284,7 +286,10 @@ function broadcastUserLeft(channelId: string, userId: string) {
   }
 }
 
-async function handleResumeConsumer(socket: AuthedSocket, event: ResumeConsumerEvent) {
+async function handleResumeConsumer(
+  socket: AuthedSocket,
+  event: ResumeConsumerEvent,
+) {
   try {
     await mediaSoupManager.resumeConsumer(socket, event.payload.consumerId);
   } catch (err) {
