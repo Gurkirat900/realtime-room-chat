@@ -6,6 +6,7 @@ export class WebSocketClient {
   private isConnected: boolean = false;
 
   connect(url: string) {
+    if (this.socket && this.isConnected) return
     if (this.socket) {
       this.socket.close();
       this.socket = null;
