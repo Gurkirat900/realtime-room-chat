@@ -1,19 +1,25 @@
-import { useState } from "react"
-import { signup } from "@/features/auth/api"
-import { useNavigate, Link } from "react-router-dom"
+import { useState } from "react";
+import { signup } from "@/features/auth/api";
+import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Signup() {
-  const [username, setUsername] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleSignup = async () => {
-    await signup({ username, email, password })
+    try {
+      await signup({ username, email, password });
 
-    navigate("/login")
-  }
+      navigate("/home");
+    } catch (error: any) {
+      const message = error.response?.data?.error || "Signup failed";
+      toast.error(message);
+    }
+  };
 
   return (
     <div className="h-screen flex items-center justify-center bg-gray-900">
@@ -54,5 +60,5 @@ export default function Signup() {
         </p>
       </div>
     </div>
-  )
+  );
 }

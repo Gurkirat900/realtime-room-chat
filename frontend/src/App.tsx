@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { useEffect } from "react"
 import { ws } from "@/core/socket/WebSocketClient"
 import { useAuth } from "@/features/auth/AuthProvider"
+import { Toaster } from "react-hot-toast"
 
 import Login from "@/pages/Login"
 import Signup from "@/pages/Signup"
@@ -12,11 +13,18 @@ function App() {
 
   useEffect(() => {
     if (!token) return
-
-    ws.connect(`ws://localhost:8000?token=${token}`)
+    
+    try {
+      ws.connect(`ws://localhost:8000?token=${token}`)
+    } catch (error) {
+      console.log("WS connection failed",error)
+    }
+    
   }, [token])
 
   return (
+    <>
+    <Toaster position="top-right" />
     <BrowserRouter>
       <Routes>
         {/* Public */}
@@ -32,6 +40,8 @@ function App() {
         />
       </Routes>
     </BrowserRouter>
+    </>
+    
   )
 }
 
