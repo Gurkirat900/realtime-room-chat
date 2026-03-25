@@ -53,7 +53,7 @@ export async function handleSocketConnection(ws: WebSocket, req: IncomingMessage
         }
       }
       
-      console.log(`Socket disconnected from voice channel: ${socket.userId}`)
+      console.log(`Socket disconnected for user: ${socket.userId}`)
     })
   } catch (error) {
     console.error("WebSocket authentication failed:", error)
