@@ -14,7 +14,7 @@ export default function Signup() {
     try {
       await signup({ username, email, password });
 
-      navigate("/home");
+      navigate("/");
     } catch (error: any) {
       const message = error.response?.data?.error || "Signup failed";
       toast.error(message);

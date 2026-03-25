@@ -1,3 +1,4 @@
+import { ws } from "@/core/socket/WebSocketClient"
 import { createContext, useContext, useState } from "react"
 
 type AuthContextType = {
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem("token")
     setToken(null)
+    ws.disconnect()
   }
 
   return (
