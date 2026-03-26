@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { VoiceClient } from "@/voice/VoiceClient.ts"
+import { VoiceClient } from "@/features/voice/VoiceClient"
 import { ws } from "@/core/socket/WebSocketClient"
 
 export function useVoice() {
