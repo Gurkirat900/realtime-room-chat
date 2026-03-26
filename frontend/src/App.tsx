@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast"
 import Login from "@/pages/Login"
 import Signup from "@/pages/Signup"
 import Home from "@/pages/Home"
+import CreateRoom from "@/pages/CreateRoom"
 
 import AppLayout from "@/components/layout/AppLayout"
 
@@ -29,6 +30,7 @@ function App() {
             <Route index element={<Home />} />
 
             {/* FUTURE */}
+            <Route path="create" element={<CreateRoom />} />
             {/* <Route path="room/:roomId" element={<Room />} /> */}
             {/* <Route path="room/:roomId/:channelId" element={<Channel />} /> */}
           </Route>

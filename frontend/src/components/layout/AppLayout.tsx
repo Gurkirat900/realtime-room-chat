@@ -5,7 +5,7 @@ import { ws } from "@/core/socket/WebSocketClient"
 
 import Navbar from "./Navbar"
 import RoomSidebar from "./RoomSidebar"
-import ChannelSidebar from "./channelSidebar"
+import ChannelSidebar from "./ChannelSidebar"
 
 export default function AppLayout() {
   const { token } = useAuth()
