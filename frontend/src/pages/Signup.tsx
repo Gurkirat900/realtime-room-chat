@@ -2,6 +2,7 @@ import { useState } from "react";
 import { signup } from "@/features/auth/api";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import {useAuth} from "../features/auth/AuthProvider"
 
 export default function Signup() {
   const [username, setUsername] = useState("");
@@ -9,10 +10,12 @@ export default function Signup() {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
+  const {loginUser}= useAuth()
 
   const handleSignup = async () => {
     try {
-      await signup({ username, email, password });
+      const data= await signup({ username, email, password });
+      loginUser(data.token,data.user)   // auto login
 
       navigate("/");
     } catch (error: any) {

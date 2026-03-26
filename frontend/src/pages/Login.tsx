@@ -14,8 +14,8 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       const data = await login({ email, password });
-
-      loginUser(data.token); // set token to loacal storage
+      
+      loginUser(data.token,data.user); // set token and user details to loacal storage
       navigate("/");
     } catch (err: any) {
       const message = err.response?.data?.error || "Login failed";
