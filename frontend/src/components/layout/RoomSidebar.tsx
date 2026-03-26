@@ -1,22 +1,12 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { getRooms } from "@/features/rooms/api"
-import type { Room } from "@/features/rooms/types"
+import { useRoomStore } from "@/features/rooms/store"
 
 export default function RoomSidebar() {
   const navigate = useNavigate()
-  const [rooms, setRooms] = useState<Room[]>([])
+  const { rooms, fetchRooms } = useRoomStore()
 
   useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        const data = await getRooms()
-        setRooms(data)
-      } catch (err) {
-        console.error("Failed to fetch rooms")
-      }
-    }
-
     fetchRooms()
   }, [])
 

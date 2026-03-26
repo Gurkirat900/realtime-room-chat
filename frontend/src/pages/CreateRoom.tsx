@@ -1,17 +1,22 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
-import { createRoom } from "@/features/rooms/api"
+import { useRoomStore } from "@/features/rooms/store"
 
 export default function CreateRoom() {
   const [name, setName] = useState("")
   const navigate = useNavigate()
 
+  const { addRoom } = useRoomStore()
+
   const handleCreate = async () => {
-  if (!name.trim()) return
+  if (!name.trim()) {
+      toast.error("Room name required")
+      return
+    }
 
   try {
-    await createRoom(name)
+    await addRoom(name)
     toast.success("Room created")
     // TODO: navigate to room(future)
     navigate("/")
