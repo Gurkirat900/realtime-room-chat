@@ -8,7 +8,7 @@ type RoomStore = {
   selectedRoomId: string | null
 
   fetchRooms: () => Promise<void>
-  addRoom: (name: string) => Promise<void>
+  addRoom: (name: string) => Promise<Room>
   joinRoom: (roomId: string) => Promise<void>
   leaveRoom: (roomId: string) => Promise<void>
 
@@ -36,12 +36,15 @@ export const useRoomStore = create<RoomStore>((set) => ({
   addRoom: async (name: string) => {
     try {
       const res = await createRoom(name)
+      console.log(res)
 
       // OPTIONAL: if backend returns created room
-      if (res?.room) {
+      if (res) {
+        console.log("inside res.room:",res)
         set((state) => ({
-          rooms: [...state.rooms, res.room]
+          rooms: [...state.rooms, res]
         }))
+        return res;
       } else {
         // fallback → refetch
         const rooms = await getRooms()

@@ -7,8 +7,10 @@ export default function RoomSidebar() {
   const { rooms, fetchRooms, selectedRoomId, setSelectedRoom } = useRoomStore()
 
   useEffect(() => {
-    fetchRooms()
-  }, [])
+    if(rooms.length==0){
+        fetchRooms()
+    }
+  }, [rooms.length])
 
   return (
     <div className="w-20 bg-gray-800 flex flex-col items-center py-4 space-y-4">
