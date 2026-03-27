@@ -75,8 +75,8 @@ export async function leaveRoom(userId: string, roomId: string) {
 }
 
 
-export async function getAllRooms() {
-  return prisma.room.findMany({
+export async function getAllRooms(userId:string) {
+  const rooms= await prisma.room.findMany({
     select: {
       id: true,
       name: true,
@@ -90,10 +90,19 @@ export async function getAllRooms() {
       }
     }
   });
+
+  const roomIds = rooms.map(r => r.id);
+
+  const activeRoomIds = await getActiveMembershipRoomIds(userId, roomIds);
+
+  return rooms.map(room => ({
+    ...room,
+    isJoined: activeRoomIds.includes(room.id)
+  }));
 }
 
 
-export async function getActiveMembershipRooms(  
+export async function getActiveMembershipRoomIds(  
   userId: string,
   roomIds: string[]
 ) {

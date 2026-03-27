@@ -84,7 +84,9 @@ export async function handleLeaveRoom(req: AuthRequest, res: Response) {
 
 export async function handleGetRooms(req: AuthRequest, res: Response) {
   try {
-    const rooms = await getAllRooms();
+    const userId= req.user!.userId;
+    const rooms = await getAllRooms(userId);
+
     res.json({ rooms, message: "Rooms retrieved successfully" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
