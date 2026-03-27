@@ -12,6 +12,6 @@ router.post("/leave", authenticate, handleLeaveRoom);
 router.get("/", authenticate, handleGetRooms);
 
 router.use("/:roomId/messages", messageRoutes);
-router.use("/:roomId/voice-channel",voiceRoutes)
+router.use("/:roomId/voice-channels",voiceRoutes)
 
 export default router;
