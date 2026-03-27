@@ -9,3 +9,13 @@ export const createRoom = async (name: string) => {
   const res = await api.post("/rooms/create", {name})
   return res.data
 }
+
+export const joinRoomApi = async (roomId: string) => {
+  const res = await api.post("/rooms/join", { roomId })
+  return res.data
+}
+
+export const leaveRoomApi = async (roomId: string) => {
+  const res = await api.post("/rooms/leave", { roomId })
+  return res.data
+}

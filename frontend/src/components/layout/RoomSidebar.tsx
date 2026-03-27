@@ -4,7 +4,7 @@ import { useRoomStore } from "@/features/rooms/store"
 
 export default function RoomSidebar() {
   const navigate = useNavigate()
-  const { rooms, fetchRooms } = useRoomStore()
+  const { rooms, fetchRooms, selectedRoomId, setSelectedRoom } = useRoomStore()
 
   useEffect(() => {
     fetchRooms()
@@ -13,19 +13,23 @@ export default function RoomSidebar() {
   return (
     <div className="w-20 bg-gray-800 flex flex-col items-center py-4 space-y-4">
       
-      {/* ROOMS */}
       {rooms.map(room => (
         <div
           key={room.id}
           title={room.name}
-          onClick={() => navigate(`/room/${room.id}`)}
-          className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-600"
+          onClick={() => {
+            setSelectedRoom(room.id)
+            navigate(`/room/${room.id}`)
+          }}
+          className={`w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer
+            ${selectedRoomId === room.id ? "bg-blue-600" : "bg-gray-700 hover:bg-gray-600"}
+          `}
         >
           {room.name.slice(0, 2).toUpperCase()}
         </div>
       ))}
 
-      {/* CREATE BUTTON */}
+      {/* CREATE */}
       <div
         onClick={() => navigate("/create")}
         className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-green-500 mt-auto"

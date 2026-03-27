@@ -6,6 +6,7 @@ import Login from "@/pages/Login"
 import Signup from "@/pages/Signup"
 import Home from "@/pages/Home"
 import CreateRoom from "@/pages/CreateRoom"
+import RoomPage from "./pages/Room"
 
 import AppLayout from "@/components/layout/AppLayout"
 
@@ -31,7 +32,7 @@ function App() {
 
             {/* FUTURE */}
             <Route path="create" element={<CreateRoom />} />
-            {/* <Route path="room/:roomId" element={<Room />} /> */}
+            <Route path="room/:roomId" element={<RoomPage />} />
             {/* <Route path="room/:roomId/:channelId" element={<Channel />} /> */}
           </Route>
 

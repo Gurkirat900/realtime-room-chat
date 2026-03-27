@@ -5,4 +5,5 @@ export type Room = {
   _count: {
     memberships: number
   }
+  isJoined: boolean
 }

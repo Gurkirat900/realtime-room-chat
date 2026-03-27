@@ -1,18 +1,25 @@
 import { create } from "zustand"
-import { getRooms, createRoom } from "./api"
+import { getRooms, createRoom, joinRoomApi, leaveRoomApi } from "./api"
 import type { Room } from "./types"
 
 type RoomStore = {
   rooms: Room[]
   isLoading: boolean
+  selectedRoomId: string | null
 
   fetchRooms: () => Promise<void>
   addRoom: (name: string) => Promise<void>
+  joinRoom: (roomId: string) => Promise<void>
+  leaveRoom: (roomId: string) => Promise<void>
+
+  setSelectedRoom: (roomId: string) => void
 }
 
 export const useRoomStore = create<RoomStore>((set) => ({
   rooms: [],
   isLoading: false,
+  selectedRoomId: null,
+
 
   fetchRooms: async () => {
     set({ isLoading: true })
@@ -44,5 +51,44 @@ export const useRoomStore = create<RoomStore>((set) => ({
       console.error("Failed to create room")
       throw err
     }
+  },
+
+  joinRoom: async (roomId: string) => {
+    try {
+      await joinRoomApi(roomId)
+
+      set((state) => ({
+        rooms: state.rooms.map(room =>
+          room.id === roomId
+            ? { ...room, isJoined: true }
+            : room
+        )
+      }))
+    } catch (err) {
+      console.error("Failed to join room")
+      throw err
+    }
+  },
+
+  leaveRoom: async (roomId: string) => {
+    try {
+      await leaveRoomApi(roomId)
+
+      set((state) => ({
+        rooms: state.rooms.map(room =>
+          room.id === roomId
+            ? { ...room, isJoined: false }
+            : room
+        )
+      }))
+    } catch (err) {
+      console.error("Failed to leave room")
+      throw err
+    }
+  },
+
+  setSelectedRoom: (roomId) => {
+    set({ selectedRoomId: roomId })
   }
+
 }))
