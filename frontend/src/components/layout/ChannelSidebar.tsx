@@ -1,13 +1,33 @@
+import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useRoomStore } from "@/features/rooms/store"
+import { getVoiceChannels } from "@/features/voice/api"
+import type { VoiceChannel } from "@/features/voice/types"
 
 export default function ChannelSidebar() {
   const { roomId } = useParams()
-  const { rooms } = useRoomStore()
+  const { rooms, leaveRoom } = useRoomStore()
+
+  const [voiceChannels, setVoiceChannels] = useState<VoiceChannel[]>([])
 
   const room = rooms.find(r => r.id === roomId)
 
-  // no room selected
+  useEffect(() => {
+    if (!room || !room.isJoined) return
+
+    const fetchChannels = async () => {
+      try {
+        const data = await getVoiceChannels(room.id)
+        setVoiceChannels(data)
+      } catch {
+        console.error("Failed to fetch voice channels")
+      }
+    }
+
+    fetchChannels()
+  }, [room])
+
+  // NO ROOM
   if (!room) {
     return (
       <div className="w-64 bg-gray-850 p-4 text-gray-400">
@@ -16,7 +36,7 @@ export default function ChannelSidebar() {
     )
   }
 
-  // not joined
+  // NOT JOINED
   if (!room.isJoined) {
     return (
       <div className="w-64 bg-gray-850 p-4 text-gray-400">
@@ -25,29 +45,39 @@ export default function ChannelSidebar() {
     )
   }
 
-  // joined → show channels
-  const textChannels = ["general", "memes"]
-  const voiceChannels = ["General VC", "Coding VC"]
-
   return (
-    <div className="w-64 bg-gray-850 p-4 text-gray-300">
-      <h2 className="text-sm font-semibold mb-2">TEXT CHANNELS</h2>
+    <div className="w-64 bg-gray-850 p-4 text-gray-300 flex flex-col">
+      
+      {/* TEXT CHANNEL */}
+      <h2 className="text-sm font-semibold mb-2">TEXT CHANNEL</h2>
+      <div className="mb-4">
+        <div className="hover:bg-gray-700 p-2 rounded cursor-pointer">
+          # Main channel
+        </div>
+      </div>
+
+      {/* VOICE CHANNELS */}
+      <h2 className="text-sm font-semibold mb-2">VOICE CHANNELS</h2>
       <ul className="mb-4">
-        {textChannels.map(ch => (
-          <li key={ch} className="hover:bg-gray-700 p-2 rounded cursor-pointer">
-            # {ch}
+        {voiceChannels.map(vc => (
+          <li
+            key={vc.id}
+            className="hover:bg-gray-700 p-2 rounded cursor-pointer"
+          >
+            🔊 {vc.name}
           </li>
         ))}
       </ul>
 
-      <h2 className="text-sm font-semibold mb-2">VOICE CHANNELS</h2>
-      <ul>
-        {voiceChannels.map(vc => (
-          <li key={vc} className="hover:bg-gray-700 p-2 rounded cursor-pointer">
-            🔊 {vc}
-          </li>
-        ))}
-      </ul>
+      {/* PUSH LEAVE BUTTON TO BOTTOM */}
+      <div className="mt-auto">
+        <button
+          onClick={() => leaveRoom(room.id)}
+          className="w-full bg-red-600 py-2 rounded hover:bg-red-500"
+        >
+          Leave Room
+        </button>
+      </div>
     </div>
   )
 }
