@@ -13,7 +13,7 @@ export const useChat = (roomId?: string, isJoined?:boolean) => {
       setIsLoading(true)
       try {
         const data = await getMessages(roomId)
-        setMessages(data.messages)
+        setMessages(data.messages.reverse())
       } catch (err) {
         console.error("Failed to fetch messages")
       } finally {
