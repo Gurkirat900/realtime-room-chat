@@ -1,46 +1,50 @@
-import { useParams } from "react-router-dom";
-import { useRoomStore } from "@/features/rooms/store";
+import { useParams } from "react-router-dom"
+import { useRoomStore } from "@/features/rooms/store"
+import { useChat } from "@/features/chat/useChat"
+import MessageList from "@/components/chat/MessageList"
 
 export default function RoomPage() {
-  const { roomId } = useParams();
-  const { rooms, joinRoom } = useRoomStore();
+  const { roomId } = useParams()
+  const { rooms, joinRoom } = useRoomStore()
 
-  const room = rooms.find((r) => r.id === roomId);
+  const room = rooms.find(r => r.id === roomId)
+
+  const { messages, isLoading } = useChat(roomId,room?.isJoined)
 
   if (!room) {
-    return <div className="text-white">Room not found</div>;
+    return <div className="text-white">Room not found</div>
   }
 
-  // NOT JOINED
+  //  NOT JOINED → SHOW BUTTON
   if (!room.isJoined) {
     return (
       <div className="text-white flex flex-col items-center justify-center h-full">
-        <h2 className="text-xl mb-4">Join "{room.name}" to start chatting</h2>
+        <h2 className="text-xl mb-4">
+          Join "{room.name}" to start chatting
+        </h2>
 
         <button
-          disabled={room.isJoined}
-          onClick={() => {
-            if (!room.isJoined) joinRoom(room.id);
-          }}
-          className={`px-5 py-2 rounded transition
-    ${
-      room.isJoined
-        ? "bg-gray-600 cursor-not-allowed"
-        : "bg-blue-600 hover:bg-blue-500"
-    }
-  `}
+          onClick={() => joinRoom(room.id)}
+          className="bg-blue-600 px-5 py-2 rounded hover:bg-blue-500"
         >
-          {room.isJoined ? "Already Joined" : "Join Room"}
+          Join Room
         </button>
       </div>
-    );
+    )
   }
 
-  //  JOINED
+  //  JOINED → SHOW CHAT
   return (
-    <div className="text-white">
-      <h1 className="text-2xl font-bold">{room.name}</h1>
-      <p className="mt-2 text-gray-400">Messages will appear here 👇</p>
+    <div className="flex flex-col h-full text-white">
+      <h1 className="p-4 border-b border-gray-700">
+        {room.name}
+      </h1>
+
+      {isLoading ? (
+        <div className="p-4">Loading messages...</div>
+      ) : (
+        <MessageList messages={messages} />
+      )}
     </div>
-  );
+  )
 }
