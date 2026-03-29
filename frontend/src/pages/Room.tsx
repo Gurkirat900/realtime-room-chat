@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom"
 import { useRoomStore } from "@/features/rooms/store"
 import { useChat } from "@/features/chat/useChat"
 import MessageList from "@/components/chat/MessageList"
+import MessageInput from "@/components/chat/MessageInput"
 
 export default function RoomPage() {
   const { roomId } = useParams()
@@ -9,7 +10,7 @@ export default function RoomPage() {
 
   const room = rooms.find(r => r.id === roomId)
 
-  const { messages, isLoading } = useChat(roomId,room?.isJoined)
+  const { messages, isLoading, sendMessage} = useChat(roomId,room?.isJoined)
 
   if (!room) {
     return <div className="text-white">Room not found</div>
@@ -45,6 +46,8 @@ export default function RoomPage() {
       ) : (
         <MessageList messages={messages} />
       )}
+
+      <MessageInput onSend={sendMessage} />
     </div>
   )
 }
