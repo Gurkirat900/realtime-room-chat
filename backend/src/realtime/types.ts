@@ -1,74 +1,82 @@
-import { WebSocket } from "ws"
+import { WebSocket } from "ws";
 
-export interface AuthedSocket extends WebSocket {  // Extend WebSocket to include user information
-  userId: string
+export interface AuthedSocket extends WebSocket {
+  // Extend WebSocket to include user information
+  userId: string;
 }
 
-export interface RawClientEvent {  // Base interface for all client events, with a type field to discriminate between event types
-  type: string
-  [key: string]: any
+export interface RawClientEvent {
+  // Base interface for all client events, with a type field to discriminate between event types
+  type: string;
+  [key: string]: any;
 }
 
-export interface SendMessageEvent {  // Client event for sending a chat message to a room
-  type: "SEND_MESSAGE"
-  roomId: string
-  content: string
-}
-
-export interface VoiceJoinEvent {  // client event for joing a voice channel
-  type: "VOICE_JOIN"
+export interface SendMessageEvent {
+  // Client event for sending a chat message to a room
+  type: "SEND_MESSAGE";
   payload: {
-    voiceChannelId: string
-  }
+    roomId: string;
+    content: string;
+  };
+}
+
+export interface VoiceJoinEvent {
+  // client event for joing a voice channel
+  type: "VOICE_JOIN";
+  payload: {
+    voiceChannelId: string;
+  };
 }
 
 export interface VoiceLeaveEvent {
-  type: "VOICE_LEAVE"
+  type: "VOICE_LEAVE";
 }
 
-export interface CreateTransportEvent {  // client event when transport is created(mediasoup)
-  type: "VOICE_CREATE_TRANSPORT"
-  payload:{
-    direction: "send" | "recv"
-  }
-}
-
-export interface ConnectTransportEvent {  // client event when transport is connected(mediasoup)
-  type: "VOICE_CONNECT_TRANSPORT"
+export interface CreateTransportEvent {
+  // client event when transport is created(mediasoup)
+  type: "VOICE_CREATE_TRANSPORT";
   payload: {
-    direction: "send" | "recv"
-    dtlsParameters: any
-  }
+    direction: "send" | "recv";
+  };
+}
+
+export interface ConnectTransportEvent {
+  // client event when transport is connected(mediasoup)
+  type: "VOICE_CONNECT_TRANSPORT";
+  payload: {
+    direction: "send" | "recv";
+    dtlsParameters: any;
+  };
 }
 
 export interface ProduceEvent {
-  type: "VOICE_PRODUCE"
+  type: "VOICE_PRODUCE";
   payload: {
-    kind: "audio" | "video"
-    rtpParameters: any
-  }
+    kind: "audio" | "video";
+    rtpParameters: any;
+  };
 }
 
-export interface GetRtpCapabilities{
-  type: "VOICE_GET_RTP_CAPABILITIES"
+export interface GetRtpCapabilities {
+  type: "VOICE_GET_RTP_CAPABILITIES";
 }
 
 export interface ConsumeEvent {
-  type: "VOICE_CONSUME"
+  type: "VOICE_CONSUME";
   payload: {
-    rtpCapabilities: any
-  }
+    rtpCapabilities: any;
+  };
 }
 
-export interface ResumeConsumerEvent{
-  type: "VOICE_RESUME_CONSUMER"
-  payload:{
-    consumerId: string
-  }
+export interface ResumeConsumerEvent {
+  type: "VOICE_RESUME_CONSUMER";
+  payload: {
+    consumerId: string;
+  };
 }
 
 // Union type for all possible client events, allowing for type-safe handling of incoming messages based on their type field
-export type ClientEvent =  
+export type ClientEvent =
   | SendMessageEvent
   | VoiceJoinEvent
   | VoiceLeaveEvent
@@ -77,91 +85,97 @@ export type ClientEvent =
   | ProduceEvent
   | GetRtpCapabilities
   | ConsumeEvent
-  | ResumeConsumerEvent
+  | ResumeConsumerEvent;
 
 export interface RoomSubscribedEvent {
-  type: "ROOM_SUBSCRIBED"
-  roomIds: string[]
+  type: "ROOM_SUBSCRIBED";
+  roomIds: string[];
+}
+
+export type Message = {
+  id: string
+  content: string
+  userId: string
+  roomId: string
+  createdAt: Date   
+  user: {
+    id: string
+    username: string
+  }
 }
 
 export interface NewMessageEvent {
-  type: "NEW_MESSAGE"
-  roomId: string
-  message: {
-    id: string
-    content: string
-    userId: string
-    createdAt: Date
-    user:{
-      id: string,
-      username: string
-    }
-  }
+  type: "NEW_MESSAGE";
+  payload: {
+    roomId: string;
+    message: Message
+  };
 }
 
-export interface ErrorEvent { // Server event for sending error messages back to the client
-  type: "ERROR"
-  message: string
+export interface ErrorEvent {
+  // Server event for sending error messages back to the client
+  type: "ERROR";
+  message: string;
 }
-
 
 export interface VoiceParticipantsEvent {
-  type: "VOICE_PARTICIPANTS"
+  type: "VOICE_PARTICIPANTS";
   payload: {
-    voiceChannelId: string
+    voiceChannelId: string;
     users: {
-      userId: string
-    }[]
-  }
+      userId: string;
+    }[];
+  };
 }
 
 export interface VoiceUserJoinedEvent {
-  type: "VOICE_USER_JOINED"
+  type: "VOICE_USER_JOINED";
   payload: {
-    voiceChannelId: string
-    userId: string
-  }
+    voiceChannelId: string;
+    userId: string;
+  };
 }
 
 export interface VoiceUserLeftEvent {
-  type: "VOICE_USER_LEFT"
+  type: "VOICE_USER_LEFT";
   payload: {
-    voiceChannelId: string
-    userId: string
-  }
+    voiceChannelId: string;
+    userId: string;
+  };
 }
 
-export interface VoiceProducedEvent {  // server to client that produced
-  type: "VOICE_PRODUCED"
+export interface VoiceProducedEvent {
+  // server to client that produced
+  type: "VOICE_PRODUCED";
   payload: {
-    producerId: string
-  }
+    producerId: string;
+  };
 }
 
-export interface VoiceNewProducerEvent {  // server to other clients
-  type: "VOICE_NEW_PRODUCER"
+export interface VoiceNewProducerEvent {
+  // server to other clients
+  type: "VOICE_NEW_PRODUCER";
   payload: {
-    producerId: string
-  }
+    producerId: string;
+  };
 }
 
 export interface VoiceConsumerCreatedEvent {
-  type: "VOICE_CONSUMER_CREATED"
+  type: "VOICE_CONSUMER_CREATED";
   payload: {
-    id: string
-    producerId: string
-    kind: string
-    rtpParameters: unknown
-  }
+    id: string;
+    producerId: string;
+    kind: string;
+    rtpParameters: unknown;
+  };
 }
 
 export interface VoiceExistingProducersEvent {
-  type: "VOICE_EXISTING_PRODUCERS"
+  type: "VOICE_EXISTING_PRODUCERS";
   payload: {
-    producerIds: string[]
-  }
+    producerIds: string[];
+  };
 }
-
 
 export type ServerEvent =
   | RoomSubscribedEvent
@@ -173,4 +187,4 @@ export type ServerEvent =
   | VoiceProducedEvent
   | VoiceNewProducerEvent
   | VoiceConsumerCreatedEvent
-  | VoiceExistingProducersEvent
+  | VoiceExistingProducersEvent;

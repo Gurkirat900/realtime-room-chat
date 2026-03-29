@@ -26,7 +26,7 @@ export function attachVoiceRouter(socket: AuthedSocket) {
       }
 
       const event = parsedEvent as ClientEvent; // Cast the parsed event to the ClientEvent union type for type-safe handling
-      console.log(event); // remove later
+      console.log("inside voice router",event); // remove later
       switch (event.type) {
         case "VOICE_JOIN":
           handleJoin(socket, event.payload.voiceChannelId);

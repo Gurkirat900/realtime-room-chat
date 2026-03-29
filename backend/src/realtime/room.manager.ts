@@ -54,7 +54,6 @@ class RoomManager {
     if (!sockets) return
 
     const message = JSON.stringify(event) // Convert the event object to a JSON string for transmission
-
     for (const socket of sockets) {
       if (socket.readyState === socket.OPEN) {
         socket.send(message)

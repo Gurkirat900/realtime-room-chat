@@ -24,7 +24,7 @@ export function attachMessageRouter(socket: AuthedSocket) {
       }
 
       const event = parsedEvent as ClientEvent; // Cast the parsed event to the ClientEvent union type for type-safe handling
-
+   
       switch (event.type) {
         
         case "SEND_MESSAGE":
@@ -48,7 +48,7 @@ async function handleSendMessage(
   socket: AuthedSocket,
   event: SendMessageEvent,
 ) {
-  const { roomId, content } = event;
+  const { roomId, content } = event.payload;
 
   if (!roomId || !content) {
     socket.send(
@@ -66,8 +66,10 @@ async function handleSendMessage(
 
     roomManager.broadcast(roomId, {
       type: "NEW_MESSAGE",
-      roomId,
-      message,
+      payload:{
+        roomId,
+        message
+      }
     });
   } catch (error: any) {
     socket.send(
